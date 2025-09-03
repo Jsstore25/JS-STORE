@@ -4,6 +4,7 @@ import { ProductCard } from '../components/ProductCard';
 import { SearchIcon, FilterIcon, CloseIcon } from '../components/Icons';
 import { Cart } from '../components/Cart';
 import ProductDetailModal from '../components/ProductDetailModal';
+import { PaymentMethods } from '../components/PaymentIcons';
 import type { Product, CartItem } from '../types';
 
 const BANNER_IMAGE_URL = "https://images.unsplash.com/photo-1445205170230-053b83016050?auto=format&fit=crop&w=1600&q=80";
@@ -200,7 +201,7 @@ const StorePage: React.FC<StorePageProps> = ({ products }) => {
         onAddToCart={handleAddToCart}
       />
 
-      <div className="relative w-full h-80 md:h-96 shadow-inner flex items-center justify-center text-center text-white">
+      <div className="relative w-full h-80 md:h-96 shadow-inner flex items-center justify-center text-center text-white overflow-hidden">
           <div className="absolute inset-0 bg-black/50 z-10"></div>
           <img 
               src={BANNER_IMAGE_URL}
@@ -225,100 +226,106 @@ const StorePage: React.FC<StorePageProps> = ({ products }) => {
         <aside 
             id="filter-sidebar"
             className={`
-              fixed top-0 left-0 h-full w-4/5 max-w-sm z-40 transform transition-transform duration-300 ease-in-out
+              fixed top-0 left-0 h-full w-4/5 max-w-sm z-40 bg-white shadow-xl
+              transform transition-transform duration-300 ease-in-out
               md:sticky md:top-28 md:w-1/4 lg:w-1/5 md:h-auto md:max-w-none md:transform-none md:z-auto
+              md:bg-transparent md:shadow-none
               ${isFilterOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
             `}
             role="dialog"
-            aria-modal="true"
+            aria-modal={isFilterOpen}
             aria-labelledby="filter-heading"
         >
-          <div className="h-full overflow-y-auto bg-white p-6 md:bg-transparent md:p-0 md:overflow-y-visible">
-            <div className="bg-white md:p-6 md:rounded-lg md:shadow-sm">
-                <div className="flex justify-between items-center mb-5 md:block">
-                    <h3 id="filter-heading" className="text-xl font-bold text-slate-900 md:mb-5">Filtros</h3>
-                    <button onClick={() => setIsFilterOpen(false)} className="md:hidden" aria-label="Fechar filtros">
-                        <CloseIcon />
-                    </button>
-                </div>
-                
-                <div className="mb-6">
-                    <h4 className="font-bold mb-3 text-lg text-pink-500">Categorias</h4>
-                    <div className="space-y-2">
-                        {categories.map(category => (
-                            <div key={category} className="flex items-center">
-                            <input
-                                type="checkbox"
-                                id={`category-${category}`}
-                                checked={activeCategoryFilters.includes(category)}
-                                onChange={() => handleCategoryFilterChange(category)}
-                                className="h-4 w-4 rounded border-gray-300 text-pink-500 focus:ring-pink-400"
-                            />
-                            <label htmlFor={`category-${category}`} className="ml-2 text-slate-700 select-none cursor-pointer">{category}</label>
-                            </div>
-                        ))}
-                    </div>
-                </div>
+          <div className="h-full flex flex-col">
+            <div className="flex justify-between items-center p-5 border-b border-slate-200 md:hidden">
+              <h3 id="filter-heading" className="text-xl font-bold text-slate-900">Filtros</h3>
+              <button onClick={() => setIsFilterOpen(false)} className="text-slate-500 hover:text-slate-800" aria-label="Fechar filtros">
+                <CloseIcon />
+              </button>
+            </div>
+            
+            <div className="overflow-y-auto flex-grow">
+              <div className="p-6 md:p-6 md:rounded-lg md:shadow-sm md:bg-white">
+                  <h3 className="text-xl font-bold text-slate-900 mb-5 hidden md:block">Filtros</h3>
+                  
+                  <div className="mb-6">
+                      <h4 className="font-bold mb-3 text-lg text-pink-500">Categorias</h4>
+                      <div className="space-y-2">
+                          {categories.map(category => (
+                              <div key={category} className="flex items-center">
+                              <input
+                                  type="checkbox"
+                                  id={`category-${category}`}
+                                  checked={activeCategoryFilters.includes(category)}
+                                  onChange={() => handleCategoryFilterChange(category)}
+                                  className="h-4 w-4 rounded border-gray-300 text-pink-500 focus:ring-pink-400"
+                              />
+                              <label htmlFor={`category-${category}`} className="ml-2 text-slate-700 select-none cursor-pointer">{category}</label>
+                              </div>
+                          ))}
+                      </div>
+                  </div>
 
-                <div className="mb-6">
-                  <h4 className="font-bold mb-3 text-lg text-pink-500">Preço</h4>
-                  <div className="flex items-center gap-2">
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">R$</span>
-                      <input
-                        type="text"
-                        name="min"
-                        placeholder="Mín."
-                        value={priceRange.min}
-                        onChange={handlePriceChange}
-                        className="w-full p-2 pl-8 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-pink-400"
-                        aria-label="Preço mínimo"
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                      />
-                    </div>
-                    <span className="text-gray-500">-</span>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">R$</span>
-                      <input
-                        type="text"
-                        name="max"
-                        placeholder="Máx."
-                        value={priceRange.max}
-                        onChange={handlePriceChange}
-                        className="w-full p-2 pl-8 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-pink-400"
-                        aria-label="Preço máximo"
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                      />
+                  <div className="mb-6">
+                    <h4 className="font-bold mb-3 text-lg text-pink-500">Preço</h4>
+                    <div className="flex items-center gap-2">
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">R$</span>
+                        <input
+                          type="text"
+                          name="min"
+                          placeholder="Mín."
+                          value={priceRange.min}
+                          onChange={handlePriceChange}
+                          className="w-full p-2 pl-8 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-pink-400"
+                          aria-label="Preço mínimo"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                        />
+                      </div>
+                      <span className="text-gray-500">-</span>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">R$</span>
+                        <input
+                          type="text"
+                          name="max"
+                          placeholder="Máx."
+                          value={priceRange.max}
+                          onChange={handlePriceChange}
+                          className="w-full p-2 pl-8 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-pink-400"
+                          aria-label="Preço máximo"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {categories.map(category => (
-                    allSubcategories[category as keyof typeof allSubcategories].length > 0 && (
-                    <div key={category} className="mb-6">
-                        <h4 className="font-bold mb-3 text-lg text-pink-500">{category}</h4>
-                        <div className="space-y-2">
-                            {allSubcategories[category as keyof typeof allSubcategories].map(sub => (
-                                <div key={sub} className="flex items-center">
-                                <input
-                                    type="checkbox"
-                                    id={sub}
-                                    checked={activeFilters.includes(sub)}
-                                    onChange={() => handleFilterChange(sub)}
-                                    className="h-4 w-4 rounded border-gray-300 text-pink-500 focus:ring-pink-400"
-                                />
-                                <label htmlFor={sub} className="ml-2 text-slate-700 select-none cursor-pointer">{sub}</label>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                    )
-                ))}
-                {(activeCategoryFilters.length > 0 || activeFilters.length > 0 || priceRange.min || priceRange.max) && (
-                  <button onClick={handleClearFilters} className="w-full text-sm text-center mt-4 bg-slate-200 text-slate-700 py-2 rounded-md hover:bg-slate-300">Limpar filtros</button>
-                )}
+                  {categories.map(category => (
+                      allSubcategories[category as keyof typeof allSubcategories].length > 0 && (
+                      <div key={category} className="mb-6">
+                          <h4 className="font-bold mb-3 text-lg text-pink-500">{category}</h4>
+                          <div className="space-y-2">
+                              {allSubcategories[category as keyof typeof allSubcategories].map(sub => (
+                                  <div key={sub} className="flex items-center">
+                                  <input
+                                      type="checkbox"
+                                      id={sub}
+                                      checked={activeFilters.includes(sub)}
+                                      onChange={() => handleFilterChange(sub)}
+                                      className="h-4 w-4 rounded border-gray-300 text-pink-500 focus:ring-pink-400"
+                                  />
+                                  <label htmlFor={sub} className="ml-2 text-slate-700 select-none cursor-pointer">{sub}</label>
+                                  </div>
+                              ))}
+                          </div>
+                      </div>
+                      )
+                  ))}
+                  {(activeCategoryFilters.length > 0 || activeFilters.length > 0 || priceRange.min || priceRange.max) && (
+                    <button onClick={handleClearFilters} className="w-full text-sm text-center mt-4 bg-slate-200 text-slate-700 py-2 rounded-md hover:bg-slate-300">Limpar filtros</button>
+                  )}
+              </div>
             </div>
           </div>
         </aside>
@@ -387,9 +394,15 @@ const StorePage: React.FC<StorePageProps> = ({ products }) => {
         </main>
       </div>
 
-       <footer className="text-center py-6 text-gray-500 text-sm bg-gray-200 mt-8">
-        <p>&copy; {new Date().getFullYear()} JS Store. Todos os direitos reservados.</p>
-        <a href="#/admin" className="text-xs text-gray-400 hover:underline">Admin Login</a>
+       <footer className="bg-slate-100 border-t border-slate-200 mt-12">
+        <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 text-center">
+            <h3 className="text-lg font-semibold text-slate-700 mb-4">Formas de Pagamento</h3>
+            <PaymentMethods />
+            <div className="mt-8 pt-8 border-t border-slate-200 text-sm text-slate-500">
+                <p>&copy; {new Date().getFullYear()} JS Store. Todos os direitos reservados.</p>
+                <a href="#/admin" className="text-xs text-slate-400 hover:underline mt-1 inline-block">Admin Login</a>
+            </div>
+        </div>
       </footer>
     </div>
   );
