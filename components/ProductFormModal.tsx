@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { Product } from '../types';
-import { CloseIcon } from './Icons';
+import { CloseIcon, TrashIcon } from './Icons';
 import { SUBCATEGORIES } from '../constants';
 
 interface ProductFormModalProps {
@@ -14,9 +14,10 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, on
   const [formData, setFormData] = useState({
     name: '',
     price: '',
-    imageUrl: '',
+    imageUrls: [] as string[],
     category: 'Mulher' as 'Mulher' | 'Homem',
     subcategory: '',
+    description: '',
   });
   const [priceError, setPriceError] = useState('');
   const [imageError, setImageError] = useState('');
@@ -26,9 +27,10 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, on
       setFormData({
         name: product.name,
         price: product.price,
-        imageUrl: product.imageUrl,
+        imageUrls: product.imageUrls,
         category: product.category,
         subcategory: product.subcategory,
+        description: product.description || '',
       });
     } else {
       const defaultCategory = 'Mulher';
@@ -36,16 +38,17 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, on
       setFormData({
         name: '',
         price: '',
-        imageUrl: '',
+        imageUrls: [],
         category: defaultCategory,
         subcategory: defaultSubcategory,
+        description: '',
       });
     }
     setPriceError('');
     setImageError('');
   }, [product, isOpen]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     
     if (name === 'category') {
@@ -66,18 +69,29 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, on
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData(prev => ({ ...prev, imageUrl: reader.result as string }));
+    const files = e.target.files;
+    if (files) {
         setImageError('');
-      };
-      reader.onerror = () => {
-        setImageError('Não foi possível ler o arquivo de imagem.');
-      };
-      reader.readAsDataURL(file);
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setFormData(prev => ({ ...prev, imageUrls: [...prev.imageUrls, reader.result as string] }));
+            };
+            reader.onerror = () => {
+                setImageError('Não foi possível ler um dos arquivos de imagem.');
+            };
+            reader.readAsDataURL(file);
+        }
+        e.target.value = '';
     }
+  };
+  
+  const handleRemoveImage = (index: number) => {
+    setFormData(prev => ({
+        ...prev,
+        imageUrls: prev.imageUrls.filter((_, i) => i !== index)
+    }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -89,8 +103,8 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, on
     }
     setPriceError('');
     
-    if (!formData.imageUrl) {
-      setImageError('Por favor, selecione uma imagem para o produto.');
+    if (formData.imageUrls.length === 0) {
+      setImageError('Por favor, adicione pelo menos uma imagem para o produto.');
       return;
     }
     setImageError('');
@@ -141,15 +155,34 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, on
             {priceError && <p id="price-error" className="mt-1 text-sm text-red-600">{priceError}</p>}
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Imagem do Produto</label>
-            <div className="mt-1 flex items-center gap-4">
-              <div className="w-24 h-24 rounded-md bg-gray-100 flex items-center justify-center overflow-hidden border">
-                {formData.imageUrl ? (
-                  <img src={formData.imageUrl} alt="Preview" className="w-full h-full object-cover" />
-                ) : (
-                  <span className="text-xs text-gray-500 text-center">Sem Imagem</span>
-                )}
-              </div>
+            <label htmlFor="description" className="block text-sm font-medium text-gray-700">Descrição</label>
+            <textarea
+                name="description"
+                id="description"
+                value={formData.description}
+                onChange={handleChange}
+                rows={4}
+                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Imagens do Produto</label>
+             <div className="mt-2 grid grid-cols-3 sm:grid-cols-4 gap-4">
+                {formData.imageUrls.map((url, index) => (
+                    <div key={index} className="relative group">
+                        <img src={url} alt={`Preview ${index + 1}`} className="w-full h-24 object-cover rounded-md border" />
+                        <button 
+                            type="button" 
+                            onClick={() => handleRemoveImage(index)}
+                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                            aria-label={`Remover imagem ${index + 1}`}
+                        >
+                            <TrashIcon />
+                        </button>
+                    </div>
+                ))}
+            </div>
+            <div className="mt-4">
               <input
                 type="file"
                 name="imageUpload"
@@ -157,12 +190,13 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, on
                 className="hidden"
                 accept="image/png, image/jpeg, image/webp, image/gif"
                 onChange={handleImageChange}
+                multiple
               />
               <label
                 htmlFor="imageUpload"
                 className="cursor-pointer bg-white py-2 px-3 border border-gray-300 rounded-md shadow-sm text-sm leading-4 font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500"
               >
-                {formData.imageUrl ? 'Trocar Imagem' : 'Selecionar Imagem'}
+                Adicionar Imagens
               </label>
             </div>
             {imageError && <p id="image-error" className="mt-1 text-sm text-red-600">{imageError}</p>}

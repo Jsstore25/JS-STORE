@@ -133,7 +133,7 @@ export const Cart: React.FC<CartProps> = ({ isOpen, onClose, cartItems, onUpdate
 
                 return (
                   <div key={item.id} className="flex items-start gap-4">
-                    <img src={item.imageUrl} alt={item.name} loading="lazy" className="w-24 h-28 object-cover rounded-md" />
+                    <img src={item.imageUrls[0]} alt={item.name} loading="lazy" className="w-24 h-28 object-cover rounded-md" />
                     <div className="flex-grow">
                       <h3 className="font-semibold text-slate-800">{item.name}</h3>
                       <p className="text-pink-500 font-bold mt-1 text-lg">{formattedItemSubtotal}</p>

@@ -22,7 +22,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onViewDetails
     >
       <div className="relative rounded-t-lg overflow-hidden">
         <img
-          src={product.imageUrl}
+          src={product.imageUrls[0]}
           alt={product.name}
           loading="lazy"
           className="w-full h-72 object-cover transition-transform duration-500 ease-in-out group-hover:scale-105"

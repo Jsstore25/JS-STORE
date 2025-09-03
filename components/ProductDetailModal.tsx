@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import type { Product } from '../types';
 import { CloseIcon, PlusIcon, MinusIcon, ShoppingBagIcon } from './Icons';
 
@@ -8,12 +8,28 @@ interface ProductDetailModalProps {
   onAddToCart: (product: Product, quantity: number) => void;
 }
 
+const ChevronLeftIcon: React.FC = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+    </svg>
+);
+
+const ChevronRightIcon: React.FC = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+    </svg>
+);
+
 const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product, onClose, onAddToCart }) => {
   const [quantity, setQuantity] = useState(1);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
 
   useEffect(() => {
     if (product) {
       setQuantity(1);
+      setCurrentImageIndex(0);
     }
   }, [product]);
 
@@ -28,6 +44,37 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product, onClos
   const handleAddToCartClick = () => {
     onAddToCart(product, quantity);
     onClose();
+  };
+  
+  const handleScroll = () => {
+    if (scrollContainerRef.current) {
+        const { scrollLeft, clientWidth } = scrollContainerRef.current;
+        const newIndex = Math.round(scrollLeft / clientWidth);
+        if (newIndex !== currentImageIndex) {
+            setCurrentImageIndex(newIndex);
+        }
+    }
+  };
+
+  const scrollToImage = (index: number) => {
+      if (scrollContainerRef.current) {
+          const { clientWidth } = scrollContainerRef.current;
+          scrollContainerRef.current.scrollTo({
+              left: clientWidth * index,
+              behavior: 'smooth'
+          });
+          setCurrentImageIndex(index);
+      }
+  };
+
+  const goToPrev = () => {
+    const newIndex = currentImageIndex > 0 ? currentImageIndex - 1 : product.imageUrls.length - 1;
+    scrollToImage(newIndex);
+  };
+  
+  const goToNext = () => {
+    const newIndex = currentImageIndex < product.imageUrls.length - 1 ? currentImageIndex + 1 : 0;
+    scrollToImage(newIndex);
   };
 
   return (
@@ -44,19 +91,58 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product, onClos
       >
         <button
           onClick={onClose}
-          className="absolute top-3 right-3 text-slate-500 hover:text-slate-900 z-10 bg-white/50 rounded-full p-1"
+          className="absolute top-3 right-3 text-slate-500 hover:text-slate-900 z-30 bg-white/50 rounded-full p-1"
           aria-label="Fechar modal"
         >
           <CloseIcon />
         </button>
         
-        <div className="w-full md:w-1/2 bg-slate-100">
-          <img
-            src={product.imageUrl}
-            alt={product.name}
-            className="w-full h-64 md:h-full object-cover"
-            loading="lazy"
-          />
+        <div className="w-full md:w-1/2 bg-slate-100 relative group">
+          <div 
+            ref={scrollContainerRef}
+            onScroll={handleScroll}
+            className="w-full h-64 md:h-full flex overflow-x-auto snap-x snap-mandatory scroll-smooth"
+          >
+            {product.imageUrls.map((url, index) => (
+                <img
+                    key={index}
+                    src={url}
+                    alt={`${product.name} - imagem ${index + 1}`}
+                    className="w-full h-full object-cover flex-shrink-0 snap-center"
+                    loading={index === 0 ? 'eager' : 'lazy'}
+                />
+            ))}
+          </div>
+
+          {product.imageUrls.length > 1 && (
+            <>
+                <button
+                    onClick={goToPrev}
+                    className="absolute top-1/2 left-2 -translate-y-1/2 bg-white/60 text-slate-800 rounded-full p-2 hover:bg-white transition opacity-0 group-hover:opacity-100 focus:opacity-100"
+                    aria-label="Imagem anterior"
+                >
+                    <ChevronLeftIcon/>
+                </button>
+                <button
+                    onClick={goToNext}
+                    className="absolute top-1/2 right-2 -translate-y-1/2 bg-white/60 text-slate-800 rounded-full p-2 hover:bg-white transition opacity-0 group-hover:opacity-100 focus:opacity-100"
+                    aria-label="Próxima imagem"
+                >
+                    <ChevronRightIcon/>
+                </button>
+                <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2">
+                    {product.imageUrls.map((_, index) => (
+                        <button
+                            key={index}
+                            onClick={() => scrollToImage(index)}
+                            className={`w-2 h-2 rounded-full transition-colors ${currentImageIndex === index ? 'bg-white' : 'bg-white/50 hover:bg-white/75'}`}
+                            aria-label={`Ir para imagem ${index + 1}`}
+                        />
+                    ))}
+                </div>
+            </>
+          )}
+
         </div>
         
         <div className="w-full md:w-1/2 p-6 md:p-8 flex flex-col overflow-y-auto">

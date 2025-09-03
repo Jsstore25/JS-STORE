@@ -2,7 +2,7 @@ export interface Product {
   id: number;
   name: string;
   price: string;
-  imageUrl: string;
+  imageUrls: string[];
   category: 'Mulher' | 'Homem';
   subcategory: string;
   description?: string;
