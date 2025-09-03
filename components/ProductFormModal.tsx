@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { Product } from '../types';
 import { CloseIcon } from './Icons';
+import { SUBCATEGORIES } from '../constants';
 
 interface ProductFormModalProps {
   isOpen: boolean;
@@ -30,12 +31,14 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, on
         subcategory: product.subcategory,
       });
     } else {
+      const defaultCategory = 'Mulher';
+      const defaultSubcategory = SUBCATEGORIES[defaultCategory][0] || '';
       setFormData({
         name: '',
         price: '',
         imageUrl: '',
-        category: 'Mulher',
-        subcategory: '',
+        category: defaultCategory,
+        subcategory: defaultSubcategory,
       });
     }
     setPriceError('');
@@ -44,7 +47,19 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, on
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    
+    if (name === 'category') {
+      const newCategory = value as 'Mulher' | 'Homem';
+      const firstSubcategory = SUBCATEGORIES[newCategory][0] || '';
+      setFormData(prev => ({ 
+        ...prev, 
+        category: newCategory, 
+        subcategory: firstSubcategory 
+      }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
+
     if (name === 'price') {
       setPriceError('');
     }
@@ -161,7 +176,18 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, on
           </div>
            <div>
             <label htmlFor="subcategory" className="block text-sm font-medium text-gray-700">Subcategoria</label>
-            <input type="text" name="subcategory" id="subcategory" value={formData.subcategory} onChange={handleChange} required className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500" />
+            <select 
+              name="subcategory" 
+              id="subcategory" 
+              value={formData.subcategory} 
+              onChange={handleChange} 
+              required 
+              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500"
+            >
+              {SUBCATEGORIES[formData.category].map(sub => (
+                <option key={sub} value={sub}>{sub}</option>
+              ))}
+            </select>
           </div>
           <div className="flex justify-end gap-4 pt-4">
             <button type="button" onClick={onClose} className="bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300">Cancelar</button>
