@@ -209,9 +209,9 @@ const StorePage: React.FC<StorePageProps> = ({ products }) => {
               className="w-full h-full object-cover"
           />
           <div className="relative z-20 p-4">
-            <h1 className="text-4xl md:text-6xl font-serif font-bold tracking-tight">Elegância e Estilo</h1>
-            <p className="mt-4 text-lg md:text-xl max-w-2xl">Descubra as últimas tendências da moda e encontre peças que combinam com você.</p>
-            <button onClick={scrollToContent} className="mt-8 bg-white text-slate-800 font-bold py-3 px-8 rounded-full hover:bg-slate-200 transition-colors">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-serif font-bold tracking-tight">Elegância e Estilo</h1>
+            <p className="mt-2 sm:mt-4 text-base sm:text-lg md:text-xl max-w-2xl">Descubra as últimas tendências da moda e encontre peças que combinam com você.</p>
+            <button onClick={scrollToContent} className="mt-6 md:mt-8 bg-white text-slate-800 font-bold text-sm sm:text-base py-2 px-6 md:py-3 md:px-8 rounded-full hover:bg-slate-200 transition-colors">
                 Ver Coleção
             </button>
           </div>
