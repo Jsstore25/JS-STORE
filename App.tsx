@@ -12,10 +12,31 @@ const App: React.FC = () => {
   
   const [products, setProducts] = useState<Product[]>(() => {
     try {
-      const savedProducts = localStorage.getItem('products');
-      return savedProducts ? JSON.parse(savedProducts) : INITIAL_PRODUCTS;
+      const savedProductsJSON = localStorage.getItem('products');
+
+      if (savedProductsJSON) {
+        let parsedProducts = JSON.parse(savedProductsJSON);
+        
+        if (Array.isArray(parsedProducts)) {
+          const migratedProducts = parsedProducts.map((p: any): Product => {
+            // Se o produto for de uma versão antiga com `imageUrl`
+            if (p.imageUrl && typeof p.imageUrl === 'string' && !p.imageUrls) {
+              const { imageUrl, ...rest } = p;
+              return { ...rest, imageUrls: [imageUrl] };
+            }
+            // Garante que `imageUrls` seja um array, prevenindo corrupção de dados
+            if (!Array.isArray(p.imageUrls)) {
+                p.imageUrls = [];
+            }
+            return p;
+          });
+          return migratedProducts;
+        }
+      }
+      
+      return INITIAL_PRODUCTS;
     } catch (error) {
-      console.error("Failed to parse products from localStorage", error);
+      console.error("Failed to parse/migrate products from localStorage", error);
       return INITIAL_PRODUCTS;
     }
   });
