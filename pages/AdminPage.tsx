@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import type { Product } from '../types';
-// Fix: Corrected typo in imported constant name from LOGO_BASE_64 to LOGO_BASE64.
 import { LOGO_BASE64 } from '../constants';
 import ProductFormModal from '../components/ProductFormModal';
 import { PlusIcon } from '../components/Icons';
@@ -128,7 +127,6 @@ const AdminPage: React.FC<AdminPageProps> = ({ products, onLogout, onAddProduct,
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
             <div className="flex items-center space-x-4">
-               {/* Fix: Corrected variable name from LOGO_BASE_64 to LOGO_BASE64. */}
                <img className="h-16 w-auto" src={LOGO_BASE64} alt="JS Store Logo" />
                <h1 className="text-xl font-bold text-gray-800">Painel do Administrador</h1>
             </div>
