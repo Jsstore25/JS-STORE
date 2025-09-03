@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { Product } from '../types';
+// Fix: Corrected typo in imported constant name from LOGO_BASE_64 to LOGO_BASE64.
 import { LOGO_BASE64 } from '../constants';
 import ProductFormModal from '../components/ProductFormModal';
 import { PlusIcon } from '../components/Icons';
@@ -21,6 +22,18 @@ const AdminPage: React.FC<AdminPageProps> = ({ products, onLogout, onAddProduct,
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [passwordSuccess, setPasswordSuccess] = useState('');
+
+  const [shippingCost, setShippingCost] = useState('');
+  const [shippingSuccess, setShippingSuccess] = useState('');
+  const [shippingError, setShippingError] = useState('');
+
+  useEffect(() => {
+    const savedShippingCost = localStorage.getItem('standardShippingCost');
+    if (savedShippingCost) {
+      const formatted = parseFloat(savedShippingCost).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+      setShippingCost(formatted);
+    }
+  }, []);
 
   const handleOpenAddModal = () => {
     setEditingProduct(null);
@@ -90,12 +103,32 @@ const AdminPage: React.FC<AdminPageProps> = ({ products, onLogout, onAddProduct,
     setTimeout(() => setPasswordSuccess(''), 3000);
   };
 
+  const handleSaveShipping = (e: React.FormEvent) => {
+    e.preventDefault();
+    setShippingError('');
+    setShippingSuccess('');
+
+    const value = shippingCost.replace('.', '').replace(',', '.');
+    const numericValue = parseFloat(value);
+    
+    if (isNaN(numericValue) || numericValue < 0) {
+      setShippingError('Por favor, insira um valor de frete válido.');
+      return;
+    }
+
+    localStorage.setItem('standardShippingCost', numericValue.toFixed(2));
+    setShippingSuccess('Valor do frete salvo com sucesso!');
+
+    setTimeout(() => setShippingSuccess(''), 3000);
+  };
+
   return (
     <div className="min-h-screen bg-gray-100">
       <header className="bg-white shadow-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
             <div className="flex items-center space-x-4">
+               {/* Fix: Corrected variable name from LOGO_BASE_64 to LOGO_BASE64. */}
                <img className="h-16 w-auto" src={LOGO_BASE64} alt="JS Store Logo" />
                <h1 className="text-xl font-bold text-gray-800">Painel do Administrador</h1>
             </div>
@@ -154,11 +187,45 @@ const AdminPage: React.FC<AdminPageProps> = ({ products, onLogout, onAddProduct,
                 </table>
             </div>
         </div>
-        
-        <div className="mt-12">
-          <h2 className="text-2xl font-bold">Alterar Senha</h2>
-          <div className="mt-6 bg-white shadow-md rounded-lg p-6">
-            <form onSubmit={handleChangePassword} className="space-y-4 max-w-md">
+
+        <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="bg-white shadow-md rounded-lg p-6">
+            <h2 className="text-2xl font-bold mb-4">Configurações de Frete</h2>
+            <form onSubmit={handleSaveShipping} className="space-y-4">
+               <div>
+                <label htmlFor="shipping-cost"  className="block text-sm font-medium text-gray-700">Frete Padrão (não-dropshipping)</label>
+                <div className="relative mt-1">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">R$</span>
+                  <input
+                    id="shipping-cost"
+                    name="shipping-cost"
+                    type="text"
+                    required
+                    placeholder="Ex: 25,00"
+                    value={shippingCost}
+                    onChange={(e) => setShippingCost(e.target.value)}
+                    className="pl-9 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-pink-500 focus:border-pink-500 sm:text-sm"
+                  />
+                </div>
+              </div>
+
+              {shippingError && <p className="text-sm text-red-600">{shippingError}</p>}
+              {shippingSuccess && <p className="text-sm text-green-600">{shippingSuccess}</p>}
+              
+              <div>
+                <button
+                  type="submit"
+                  className="w-full sm:w-auto flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-pink-600 hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500"
+                >
+                  Salvar Frete
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <div className="bg-white shadow-md rounded-lg p-6">
+            <h2 className="text-2xl font-bold mb-4">Alterar Senha</h2>
+            <form onSubmit={handleChangePassword} className="space-y-4">
               <div>
                 <label htmlFor="current-password"  className="block text-sm font-medium text-gray-700">Senha Atual</label>
                 <input
