@@ -201,20 +201,21 @@ const StorePage: React.FC<StorePageProps> = ({ products }) => {
         onAddToCart={handleAddToCart}
       />
 
-      <div className="relative w-full h-96 md:h-[500px] shadow-inner flex items-center justify-center text-center text-white overflow-hidden">
-          <div className="absolute inset-0 bg-black/50 z-10"></div>
+      <div className="w-full bg-slate-200 shadow-inner flex flex-col md:flex-row overflow-hidden">
+        <div className="w-full md:w-1/2 h-64 md:h-[500px]">
           <img 
-              src={BANNER_IMAGE_URL}
-              alt="Banner de moda com roupas em cabides" 
-              className="w-full h-full object-cover"
+            src={BANNER_IMAGE_URL}
+            alt="Banner de moda com roupas em cabides" 
+            className="w-full h-full object-cover"
           />
-          <div className="relative z-20 p-4">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-serif font-bold tracking-tight">Elegância e Estilo</h1>
-            <p className="mt-2 sm:mt-4 text-base sm:text-lg md:text-xl max-w-2xl">Descubra as últimas tendências da moda e encontre peças que combinam com você.</p>
-            <button onClick={scrollToContent} className="mt-6 md:mt-8 bg-white text-slate-800 font-bold text-sm sm:text-base py-2 px-6 md:py-3 md:px-8 rounded-full hover:bg-slate-200 transition-colors">
-                Ver Coleção
-            </button>
-          </div>
+        </div>
+        <div className="w-full md:w-1/2 flex flex-col justify-center items-start text-left p-8 md:p-12 lg:p-16 bg-white text-slate-800">
+          <h1 className="text-3xl sm:text-4xl md:text-4xl lg:text-5xl font-serif font-bold tracking-tight">Elegância e Estilo</h1>
+          <p className="mt-4 text-base sm:text-lg max-w-md">Descubra as últimas tendências da moda e encontre peças que combinam com você.</p>
+          <button onClick={scrollToContent} className="mt-8 bg-pink-500 text-white font-bold text-sm sm:text-base py-3 px-8 rounded-full hover:bg-pink-600 transition-colors">
+              Ver Coleção
+          </button>
+        </div>
       </div>
       
        <div
