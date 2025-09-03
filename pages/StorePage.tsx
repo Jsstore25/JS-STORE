@@ -201,7 +201,7 @@ const StorePage: React.FC<StorePageProps> = ({ products }) => {
         onAddToCart={handleAddToCart}
       />
 
-      <div className="relative w-full h-80 md:h-96 shadow-inner flex items-center justify-center text-center text-white overflow-hidden">
+      <div className="relative w-full h-96 md:h-[500px] shadow-inner flex items-center justify-center text-center text-white overflow-hidden">
           <div className="absolute inset-0 bg-black/50 z-10"></div>
           <img 
               src={BANNER_IMAGE_URL}

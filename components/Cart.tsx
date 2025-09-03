@@ -73,7 +73,7 @@ export const Cart: React.FC<CartProps> = ({ isOpen, onClose, cartItems, onUpdate
     // SIMULAÇÃO DE CÁLCULO DE FRETE
     // Lê o valor do frete padrão definido pelo admin.
     const savedShippingCost = localStorage.getItem('standardShippingCost');
-    const standardShippingCost = savedShippingCost ? parseFloat(savedShippingCost) : 25.00; // Fallback para 25.00
+    const standardShippingCost = savedShippingCost ? parseFloat(savedShippingCost) : 40.00; // Fallback para 40.00
     setShippingCost(standardShippingCost);
   };
   
