@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Header } from '../components/Header';
 import { ProductCard } from '../components/ProductCard';
 import { SearchIcon, FilterIcon, CloseIcon } from '../components/Icons';
@@ -36,8 +36,38 @@ const StorePage: React.FC<StorePageProps> = ({ products, onAddReview }) => {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [newProductIds, setNewProductIds] = useState<number[]>([]);
 
   const mainContentRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (products.length > 0) {
+        const seenIds: number[] = JSON.parse(localStorage.getItem('seenProductIds') || '[]');
+        const currentIds = products.map(p => p.id);
+        const newIds = currentIds.filter(id => !seenIds.includes(id));
+        
+        if (newIds.length > 0) {
+            setNewProductIds(newIds);
+            
+            const timer = setTimeout(() => {
+                localStorage.setItem('seenProductIds', JSON.stringify(currentIds));
+            }, 10000); // Marca como visto após 10 segundos
+
+            return () => clearTimeout(timer);
+        } else {
+            localStorage.setItem('seenProductIds', JSON.stringify(currentIds));
+        }
+    }
+  }, [products]);
+
+  const handleNotificationClick = () => {
+    if (newProductIds.length > 0) {
+        const firstNewId = newProductIds[0];
+        const element = document.getElementById(`product-${firstNewId}`);
+        element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  };
+
 
   const handleAddToCart = (product: Product, quantity: number = 1) => {
     setCart(prevCart => {
@@ -147,11 +177,19 @@ const StorePage: React.FC<StorePageProps> = ({ products, onAddReview }) => {
         sortedProducts.sort((a, b) => b.name.localeCompare(a.name));
         break;
       default:
+        // Prioritize new products by default
+        sortedProducts.sort((a, b) => {
+            const aIsNew = newProductIds.includes(a.id);
+            const bIsNew = newProductIds.includes(b.id);
+            if (aIsNew && !bIsNew) return -1;
+            if (!aIsNew && bIsNew) return 1;
+            return 0;
+        });
         break;
     }
 
     return sortedProducts;
-  }, [searchTerm, activeFilters, sortOrder, products, priceRange, activeCategoryFilters]);
+  }, [searchTerm, activeFilters, sortOrder, products, priceRange, activeCategoryFilters, newProductIds]);
 
   const productsByCategory = useMemo(() => {
     return processedProducts.reduce((acc, product) => {
@@ -177,7 +215,12 @@ const StorePage: React.FC<StorePageProps> = ({ products, onAddReview }) => {
 
   return (
     <div className="min-h-screen font-sans text-slate-800 bg-slate-50">
-      <Header cartItemCount={cartItemCount} onCartClick={() => setIsCartOpen(true)} />
+      <Header 
+        cartItemCount={cartItemCount} 
+        onCartClick={() => setIsCartOpen(true)}
+        newProductCount={newProductIds.length}
+        onNotificationClick={handleNotificationClick}
+      />
       <Cart 
         isOpen={isCartOpen}
         onClose={() => setIsCartOpen(false)}
@@ -372,7 +415,7 @@ const StorePage: React.FC<StorePageProps> = ({ products, onAddReview }) => {
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
                     {productsByCategory[category].map(product => (
-                      <ProductCard key={product.id} product={product} onViewDetails={handleViewDetails} onAddToCart={() => handleAddToCart(product, 1)}/>
+                      <ProductCard key={product.id} product={product} isNew={newProductIds.includes(product.id)} onViewDetails={handleViewDetails} onAddToCart={() => handleAddToCart(product, 1)}/>
                     ))}
                 </div>
                 </section>

@@ -4,11 +4,12 @@ import { ShoppingBagIcon } from './Icons';
 
 interface ProductCardProps {
   product: Product;
+  isNew: boolean;
   onViewDetails: (product: Product) => void;
   onAddToCart: (product: Product) => void;
 }
 
-export const ProductCard: React.FC<ProductCardProps> = ({ product, onViewDetails, onAddToCart }) => {
+export const ProductCard: React.FC<ProductCardProps> = ({ product, isNew, onViewDetails, onAddToCart }) => {
   const handleAddToCartClick = (e: React.MouseEvent) => {
     e.stopPropagation(); // Impede que o modal de detalhes seja aberto
     onAddToCart(product);
@@ -16,11 +17,17 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onViewDetails
   
   return (
     <div
+      id={`product-${product.id}`}
       className="bg-white rounded-lg shadow-md group flex flex-col justify-between transition-transform duration-300 ease-in-out hover:shadow-xl hover:-translate-y-1 text-left w-full cursor-pointer"
       onClick={() => onViewDetails(product)}
       aria-label={`Ver detalhes de ${product.name}`}
     >
       <div className="relative rounded-t-lg overflow-hidden bg-slate-100">
+        {isNew && (
+            <div className="absolute top-2 right-2 bg-pink-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg z-10 animate-pulse">
+                NOVO
+            </div>
+        )}
         <img
           src={product.imageUrls[0]}
           alt={product.name}
