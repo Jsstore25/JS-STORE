@@ -6,6 +6,7 @@ import { Cart } from '../components/Cart';
 import ProductDetailModal from '../components/ProductDetailModal';
 import { PaymentMethods } from '../components/PaymentIcons';
 import type { Product, CartItem } from '../types';
+import { SUBCATEGORIES } from '../constants';
 
 const BANNER_IMAGE_URL = "https://images.unsplash.com/photo-1445205170230-053b83016050?auto=format&fit=crop&w=1600&q=80";
 
@@ -69,21 +70,6 @@ const StorePage: React.FC<StorePageProps> = ({ products }) => {
   const cartItemCount = useMemo(() => {
     return cart.reduce((total, item) => total + item.quantity, 0);
   }, [cart]);
-
-  const allSubcategories = useMemo(() => {
-    const subcategoriesByCategory = products.reduce((acc, product) => {
-        if (!acc[product.category]) {
-            acc[product.category] = new Set();
-        }
-        acc[product.category].add(product.subcategory);
-        return acc;
-    }, {} as Record<string, Set<string>>);
-
-    return {
-      Feminino: Array.from(subcategoriesByCategory['Feminino'] || []).sort(),
-      Masculino: Array.from(subcategoriesByCategory['Masculino'] || []).sort()
-    }
-  }, [products]);
 
   const handleCategoryFilterChange = (category: string) => {
     setActiveCategoryFilters(prev => 
@@ -302,27 +288,30 @@ const StorePage: React.FC<StorePageProps> = ({ products }) => {
                     </div>
                   </div>
 
-                  {categories.map(category => (
-                      allSubcategories[category as keyof typeof allSubcategories].length > 0 && (
-                      <div key={category} className="mb-6">
-                          <h4 className="font-bold mb-3 text-lg text-pink-500">{category}</h4>
-                          <div className="space-y-2">
-                              {allSubcategories[category as keyof typeof allSubcategories].map(sub => (
-                                  <div key={sub} className="flex items-center">
-                                  <input
-                                      type="checkbox"
-                                      id={sub}
-                                      checked={activeFilters.includes(sub)}
-                                      onChange={() => handleFilterChange(sub)}
-                                      className="h-4 w-4 rounded border-gray-300 text-pink-500 focus:ring-pink-400"
-                                  />
-                                  <label htmlFor={sub} className="ml-2 text-slate-700 select-none cursor-pointer">{sub}</label>
-                                  </div>
-                              ))}
-                          </div>
-                      </div>
+                  {categories.map(category => {
+                    const subcategories = SUBCATEGORIES[category as keyof typeof SUBCATEGORIES];
+                    return (
+                      subcategories && subcategories.length > 0 && (
+                        <div key={category} className="mb-6">
+                            <h4 className="font-bold mb-3 text-lg text-pink-500">{category}</h4>
+                            <div className="space-y-2">
+                                {subcategories.map(sub => (
+                                    <div key={sub} className="flex items-center">
+                                    <input
+                                        type="checkbox"
+                                        id={sub}
+                                        checked={activeFilters.includes(sub)}
+                                        onChange={() => handleFilterChange(sub)}
+                                        className="h-4 w-4 rounded border-gray-300 text-pink-500 focus:ring-pink-400"
+                                    />
+                                    <label htmlFor={sub} className="ml-2 text-slate-700 select-none cursor-pointer">{sub}</label>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
                       )
-                  ))}
+                    )
+                  })}
                   {(activeCategoryFilters.length > 0 || activeFilters.length > 0 || priceRange.min || priceRange.max) && (
                     <button onClick={handleClearFilters} className="w-full text-sm text-center mt-4 bg-slate-200 text-slate-700 py-2 rounded-md hover:bg-slate-300">Limpar filtros</button>
                   )}
