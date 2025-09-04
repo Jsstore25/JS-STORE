@@ -70,8 +70,8 @@ export default async function handler(req: any, res: any) {
       return res.status(200).json({ message: 'Products imported successfully' });
     }
 
-    // Rotas CRUD padrão para /api/products
-    if (url?.startsWith('/api/products')) {
+    // Rotas CRUD padrão para /api/products, ajustado para não capturar sub-rotas como 'import'
+    if (url === '/api/products' || url?.startsWith('/api/products?')) {
       const idParam = query.id as string;
 
       switch (method) {
