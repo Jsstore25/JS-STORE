@@ -60,18 +60,26 @@ export default async function handler(req: any, res: any) {
   try {
     const { url, method, query, body } = req;
 
-    // Rota específica para importação de dados
-    if (method === 'POST' && url === '/api/products/import') {
-      const importedProducts = body;
-      if (!Array.isArray(importedProducts)) {
-        return res.status(400).json({ error: 'Body must be an array of products' });
+    // Remove a query string e divide a URL em segmentos para um roteamento robusto.
+    const pathSegments = url.split('?')[0].split('/').filter(Boolean);
+
+    // Rota: /api/products/import
+    if (pathSegments[0] === 'api' && pathSegments[1] === 'products' && pathSegments[2] === 'import' && pathSegments.length === 3) {
+      if (method === 'POST') {
+        const importedProducts = body;
+        if (!Array.isArray(importedProducts)) {
+          return res.status(400).json({ error: 'O corpo da requisição deve ser um array de produtos.' });
+        }
+        products = importedProducts; // Substitui a lista de produtos em memória.
+        return res.status(200).json({ message: 'Produtos importados com sucesso.' });
+      } else {
+        res.setHeader('Allow', ['POST']);
+        return res.status(405).end(`Método ${method} não permitido para a rota de importação.`);
       }
-      products = importedProducts;
-      return res.status(200).json({ message: 'Products imported successfully' });
     }
 
-    // Rotas CRUD padrão para /api/products, ajustado para não capturar sub-rotas como 'import'
-    if (url === '/api/products' || url?.startsWith('/api/products?')) {
+    // Rota: /api/products (e com query params)
+    if (pathSegments[0] === 'api' && pathSegments[1] === 'products' && pathSegments.length === 2) {
       const idParam = query.id as string;
 
       switch (method) {
@@ -91,14 +99,14 @@ export default async function handler(req: any, res: any) {
 
         case 'PUT': {
           if (!idParam) {
-            return res.status(400).json({ error: 'Product ID is required' });
+            return res.status(400).json({ error: 'O ID do produto é obrigatório.' });
           }
           const id = parseInt(idParam, 10);
           const updatedProductData = body;
           const productIndex = products.findIndex(p => p.id === id);
 
           if (productIndex === -1) {
-            return res.status(404).json({ error: 'Product not found' });
+            return res.status(404).json({ error: 'Produto não encontrado.' });
           }
           
           products[productIndex] = { ...products[productIndex], ...updatedProductData };
@@ -107,14 +115,14 @@ export default async function handler(req: any, res: any) {
             
         case 'DELETE': {
           if (!idParam) {
-            return res.status(400).json({ error: 'Product ID is required' });
+            return res.status(400).json({ error: 'O ID do produto é obrigatório.' });
           }
           const id = parseInt(idParam, 10);
           const initialLength = products.length;
           products = products.filter(p => p.id !== id);
             
           if (products.length === initialLength) {
-            return res.status(404).json({ error: 'Product not found' });
+            return res.status(404).json({ error: 'Produto não encontrado.' });
           }
             
           return res.status(204).send(null);
@@ -122,15 +130,15 @@ export default async function handler(req: any, res: any) {
 
         default:
           res.setHeader('Allow', ['GET', 'POST', 'PUT', 'DELETE']);
-          return res.status(405).end(`Method ${method} Not Allowed`);
+          return res.status(405).end(`Método ${method} não permitido para a rota de produtos.`);
       }
     }
     
     // Se nenhuma rota corresponder, retorna 404
-    return res.status(404).json({ error: 'Not Found' });
+    return res.status(404).json({ error: 'Rota não encontrada.' });
 
   } catch (error: any) {
-    console.error('API Error:', error);
-    return res.status(500).json({ error: 'Internal Server Error', message: error.message });
+    console.error('Erro na API:', error);
+    return res.status(500).json({ error: 'Erro Interno do Servidor', message: error.message });
   }
 }
