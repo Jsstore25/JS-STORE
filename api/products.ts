@@ -54,17 +54,44 @@ const INITIAL_PRODUCTS: Product[] = [
 // Criamos uma cópia profunda para evitar que as mutações afetem o array original.
 let products: Product[] = JSON.parse(JSON.stringify(INITIAL_PRODUCTS));
 
-export const config = {
-  runtime: 'edge',
-};
 
 export default async function handler(req: Request) {
   const { method } = req;
-  // Usar uma base fictícia para garantir que a URL seja construída corretamente, mesmo que req.url seja relativo.
-  const url = new URL(req.url, `https://${req.headers.get('host') || 'localhost'}`);
-  const id = url.searchParams.get('id');
-
+  
   try {
+    // Para garantir a robustez em diferentes ambientes de servidor (especialmente serverless),
+    // construímos uma URL completa usando o cabeçalho 'host'. Isso evita erros de parsing
+    // caso 'req.url' seja um caminho relativo (ex: '/api/products') em vez de uma URL completa.
+    const host = req.headers.get('host') || 'localhost';
+    const protocol = host.startsWith('localhost') ? 'http' : 'https';
+    const url = new URL(req.url, `${protocol}://${host}`);
+    
+    // Rota para importar/substituir todos os dados
+    if (url.pathname === '/api/products/import') {
+      if (method === 'POST') {
+        const importedProducts = await req.json();
+        if (!Array.isArray(importedProducts)) {
+           return new Response(JSON.stringify({ error: 'Body must be an array of products' }), { 
+                status: 400, 
+                headers: { 'Content-Type': 'application/json' } 
+            });
+        }
+        products = importedProducts; // Substitui completamente os dados em memória
+        return new Response(JSON.stringify({ message: 'Products imported successfully' }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      } else {
+        const headers = new Headers();
+        headers.set('Allow', 'POST');
+        return new Response('Method Not Allowed for /import', { status: 405, headers });
+      }
+    }
+
+
+    // Rotas CRUD padrão
+    const id = url.searchParams.get('id');
+
     switch (method) {
       // GET /api/products
       case 'GET':

@@ -156,6 +156,7 @@ const App: React.FC = () => {
           onAddProduct={handleAddProduct}
           onUpdateProduct={handleUpdateProduct}
           onDeleteProduct={handleDeleteProduct}
+          onRefreshProducts={fetchProducts}
         />
       );
     } else {

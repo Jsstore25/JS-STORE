@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import type { Product } from '../types';
 import { LOGO_BASE64 } from '../constants';
 import ProductFormModal from '../components/ProductFormModal';
-import { PlusIcon } from '../components/Icons';
+import { PlusIcon, UploadIcon, DownloadIcon } from '../components/Icons';
 
 interface AdminPageProps {
   products: Product[];
@@ -10,9 +10,10 @@ interface AdminPageProps {
   onAddProduct: (product: Omit<Product, 'id'>) => void;
   onUpdateProduct: (product: Product) => void;
   onDeleteProduct: (productId: number) => void;
+  onRefreshProducts: () => void;
 }
 
-const AdminPage: React.FC<AdminPageProps> = ({ products, onLogout, onAddProduct, onUpdateProduct, onDeleteProduct }) => {
+const AdminPage: React.FC<AdminPageProps> = ({ products, onLogout, onAddProduct, onUpdateProduct, onDeleteProduct, onRefreshProducts }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   
@@ -25,6 +26,9 @@ const AdminPage: React.FC<AdminPageProps> = ({ products, onLogout, onAddProduct,
   const [shippingCost, setShippingCost] = useState('');
   const [shippingSuccess, setShippingSuccess] = useState('');
   const [shippingError, setShippingError] = useState('');
+  
+  const [importSuccess, setImportSuccess] = useState('');
+  const [importError, setImportError] = useState('');
 
   useEffect(() => {
     const savedShippingCost = localStorage.getItem('standardShippingCost');
@@ -119,6 +123,69 @@ const AdminPage: React.FC<AdminPageProps> = ({ products, onLogout, onAddProduct,
     setShippingSuccess('Valor do frete salvo com sucesso!');
 
     setTimeout(() => setShippingSuccess(''), 3000);
+  };
+  
+  const handleExport = () => {
+    const dataStr = JSON.stringify(products, null, 2);
+    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+    
+    const exportFileDefaultName = 'jsstore_products_backup.json';
+    
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', exportFileDefaultName);
+    linkElement.click();
+    linkElement.remove();
+  };
+  
+  const handleImportChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const fileReader = new FileReader();
+    const file = event.target.files?.[0];
+
+    if (!file) return;
+
+    setImportError('');
+    setImportSuccess('');
+
+    fileReader.readAsText(file, "UTF-8");
+    fileReader.onload = async (e) => {
+      try {
+        const content = e.target?.result;
+        if (typeof content !== 'string') {
+          throw new Error("Não foi possível ler o arquivo.");
+        }
+        const importedProducts = JSON.parse(content);
+        
+        // Validação simples
+        if (!Array.isArray(importedProducts)) {
+          throw new Error("O arquivo JSON deve conter um array de produtos.");
+        }
+        
+        const response = await fetch('/api/products/import', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(importedProducts)
+        });
+
+        if (!response.ok) {
+          throw new Error('Falha ao enviar dados para o servidor.');
+        }
+
+        setImportSuccess('Dados importados com sucesso! A lista de produtos foi atualizada.');
+        onRefreshProducts(); // Recarrega os produtos na interface
+        setTimeout(() => setImportSuccess(''), 4000);
+
+      } catch (error) {
+        console.error(error);
+        const message = (error as Error).message || 'Ocorreu um erro desconhecido.';
+        setImportError(`Erro ao importar: ${message}`);
+        setTimeout(() => setImportError(''), 4000);
+      } finally {
+         if (event.target) {
+           event.target.value = ''; // Permite re-selecionar o mesmo arquivo
+         }
+      }
+    };
   };
 
   return (
@@ -278,6 +345,30 @@ const AdminPage: React.FC<AdminPageProps> = ({ products, onLogout, onAddProduct,
             </form>
           </div>
         </div>
+        
+        <div className="mt-8 bg-white shadow-md rounded-lg p-6">
+            <h2 className="text-2xl font-bold mb-4">Gerenciamento de Dados</h2>
+            <p className="text-sm text-gray-600 mb-4">Exporte seus dados de produtos para um arquivo de backup ou importe um arquivo para restaurar sua loja. Isso é útil pois os dados podem ser resetados no ambiente do servidor.</p>
+            <div className="flex flex-col sm:flex-row gap-4">
+                <button onClick={handleExport} className="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600">
+                    <DownloadIcon /> Exportar Dados (JSON)
+                </button>
+
+                <input
+                    type="file"
+                    id="import-file"
+                    className="hidden"
+                    accept=".json"
+                    onChange={handleImportChange}
+                />
+                <label htmlFor="import-file" className="w-full sm:w-auto cursor-pointer flex items-center justify-center gap-2 bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700">
+                    <UploadIcon /> Importar Dados (JSON)
+                </label>
+            </div>
+             {importError && <p className="mt-2 text-sm text-red-600">{importError}</p>}
+             {importSuccess && <p className="mt-2 text-sm text-green-600">{importSuccess}</p>}
+        </div>
+
       </main>
       {isModalOpen && (
           <ProductFormModal 
