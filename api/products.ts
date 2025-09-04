@@ -59,12 +59,12 @@ export default async function handler(req: Request) {
   const { method } = req;
   
   try {
-    // Para garantir a robustez em diferentes ambientes de servidor (especialmente serverless),
-    // construímos uma URL completa usando o cabeçalho 'host'. Isso evita erros de parsing
-    // caso 'req.url' seja um caminho relativo (ex: '/api/products') em vez de uma URL completa.
-    const host = req.headers.get('host') || 'localhost';
-    const protocol = host.startsWith('localhost') ? 'http' : 'https';
-    const url = new URL(req.url, `${protocol}://${host}`);
+    // A abordagem anterior de construir a URL com base no cabeçalho 'host' era frágil.
+    // Usar uma base dummy é muito mais robusto. Funciona se req.url for um caminho
+    // relativo (ex: /api/products) ou uma URL absoluta. Isso nos dá acesso ao pathname
+    // e searchParams de forma confiável, sem depender de cabeçalhos que podem
+    // variar entre ambientes de servidor (como local vs. Vercel).
+    const url = new URL(req.url, `http://dummy.base`);
     
     // Rota para importar/substituir todos os dados
     if (url.pathname === '/api/products/import') {
