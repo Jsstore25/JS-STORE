@@ -96,6 +96,10 @@ const App: React.FC = () => {
     setProducts(prev => prev.filter(p => p.id !== productId));
   };
 
+  const handleSetProducts = (newProducts: Product[]) => {
+    setProducts(newProducts);
+  };
+
   if (currentPath.startsWith('#/admin')) {
     if (isAdmin) {
       return (
@@ -105,6 +109,7 @@ const App: React.FC = () => {
           onAddProduct={handleAddProduct}
           onUpdateProduct={handleUpdateProduct}
           onDeleteProduct={handleDeleteProduct}
+          onSetProducts={handleSetProducts}
         />
       );
     } else {
