@@ -55,105 +55,82 @@ const INITIAL_PRODUCTS: Product[] = [
 let products: Product[] = JSON.parse(JSON.stringify(INITIAL_PRODUCTS));
 
 
-export default async function handler(req: Request) {
+// Este manipulador usa a sintaxe do Vercel Node.js runtime (req, res).
+export default async function handler(req: any, res: any) {
   try {
-    const url = new URL(req.url, `http://dummy.base`);
-    const { pathname } = url;
-    const { method } = req;
+    const { url, method, query, body } = req;
 
     // Rota específica para importação de dados
-    if (method === 'POST' && pathname === '/api/products/import') {
-      const importedProducts = await req.json();
+    if (method === 'POST' && url === '/api/products/import') {
+      const importedProducts = body;
       if (!Array.isArray(importedProducts)) {
-        return new Response(JSON.stringify({ error: 'Body must be an array of products' }), { 
-          status: 400, 
-          headers: { 'Content-Type': 'application/json' } 
-        });
+        return res.status(400).json({ error: 'Body must be an array of products' });
       }
-      products = importedProducts; // Substitui completamente os dados em memória
-      return new Response(JSON.stringify({ message: 'Products imported successfully' }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      products = importedProducts;
+      return res.status(200).json({ message: 'Products imported successfully' });
     }
 
     // Rotas CRUD padrão para /api/products
-    if (pathname === '/api/products') {
-      const idParam = url.searchParams.get('id');
+    if (url?.startsWith('/api/products')) {
+      const idParam = query.id as string;
 
       switch (method) {
         case 'GET':
-          return new Response(JSON.stringify(products), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' },
-          });
+          return res.status(200).json(products);
 
         case 'POST': {
-          const newProductData = await req.json();
+          const newProductData = body;
           const newProduct: Product = {
             ...newProductData,
-            id: Date.now(), // Gera um ID único baseado no timestamp
+            id: Date.now(),
             reviews: newProductData.reviews || [],
           };
           products.push(newProduct);
-          return new Response(JSON.stringify(newProduct), {
-            status: 201, // 201 Created
-            headers: { 'Content-Type': 'application/json' },
-          });
+          return res.status(201).json(newProduct);
         }
 
         case 'PUT': {
           if (!idParam) {
-            return new Response(JSON.stringify({ error: 'Product ID is required' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+            return res.status(400).json({ error: 'Product ID is required' });
           }
           const id = parseInt(idParam, 10);
-          const updatedProductData = await req.json();
+          const updatedProductData = body;
           const productIndex = products.findIndex(p => p.id === id);
 
           if (productIndex === -1) {
-            return new Response(JSON.stringify({ error: 'Product not found' }), { status: 404, headers: { 'Content-Type': 'application/json' } });
+            return res.status(404).json({ error: 'Product not found' });
           }
           
           products[productIndex] = { ...products[productIndex], ...updatedProductData };
-          return new Response(JSON.stringify(products[productIndex]), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' },
-          });
+          return res.status(200).json(products[productIndex]);
         }
             
         case 'DELETE': {
           if (!idParam) {
-            return new Response(JSON.stringify({ error: 'Product ID is required' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+            return res.status(400).json({ error: 'Product ID is required' });
           }
           const id = parseInt(idParam, 10);
           const initialLength = products.length;
           products = products.filter(p => p.id !== id);
             
           if (products.length === initialLength) {
-            return new Response(JSON.stringify({ error: 'Product not found' }), { status: 404, headers: { 'Content-Type': 'application/json' } });
+            return res.status(404).json({ error: 'Product not found' });
           }
             
-          return new Response(null, { status: 204 }); // 204 No Content
+          return res.status(204).send(null);
         }
 
         default:
-          const headers = new Headers();
-          headers.set('Allow', 'GET, POST, PUT, DELETE');
-          return new Response('Method Not Allowed', { status: 405, headers });
+          res.setHeader('Allow', ['GET', 'POST', 'PUT', 'DELETE']);
+          return res.status(405).end(`Method ${method} Not Allowed`);
       }
     }
     
     // Se nenhuma rota corresponder, retorna 404
-    return new Response(JSON.stringify({ error: 'Not Found' }), {
-      status: 404,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return res.status(404).json({ error: 'Not Found' });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('API Error:', error);
-    return new Response(JSON.stringify({ error: 'Internal Server Error' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return res.status(500).json({ error: 'Internal Server Error', message: error.message });
   }
 }
