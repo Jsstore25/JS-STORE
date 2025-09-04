@@ -9,7 +9,7 @@ export const LocationIcon: React.FC = () => (
 
 export const WhatsAppIcon: React.FC = () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" fill="currentColor" viewBox="0 0 24 24">
-        <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.487 5.235 3.487 8.413 0 6.557-5.338 11.892-11.894 11.892-1.99 0-3.903-.52-5.614-1.474l-6.354 1.688zm7.431-2.919l.433.259c1.652.993 3.52 1.54 5.433 1.54 5.396 0 9.776-4.38 9.776-9.777 0-5.396-4.38-9.776-9.776-9.776s-9.776 4.38-9.776 9.776c0 2.021.61 3.945 1.735 5.618l.28.46-1.125 4.108 4.224-1.119z" />
+        <path d="M12.04 2C6.58 2 2.13 6.45 2.13 12c0 1.77.46 3.45 1.28 4.91L2 22l5.17-1.35c1.39.75 2.97 1.18 4.64 1.18h.01c5.46 0 9.91-4.45 9.91-9.92 0-5.46-4.45-9.91-9.91-9.91zM17.48 15.6c-.22-.11-.76-.38-1.04-.49-.28-.11-.48-.17-.68.17-.2.34-.63.76-.77.92-.14.16-.28.17-.53.06s-1.04-.38-1.98-1.22c-.73-.66-1.22-1.47-1.36-1.72-.14-.25-.01-.38.1-.5.1-.11.22-.28.33-.42.11-.14.14-.25.22-.41.07-.17.04-.31-.01-.42s-.68-1.62-.93-2.22c-.25-.6-.5-.52-.68-.52-.17 0-.37-.01-.57-.01s-.53.07-.81.36c-.28.28-.93.98-1.1 2.38-.17 1.4.66 2.76.76 2.96.1.2 1.25 1.91 3.03 2.66.42.17.76.28.98.36.42.14.81.12 1.1.07.34-.04.76-.31.87-.6s.11-.53.07-.59c-.04-.06-.14-.11-.22-.17z" />
     </svg>
 );
 
@@ -24,6 +24,12 @@ export const InstagramIcon: React.FC = () => (
 export const SearchIcon: React.FC = () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+    </svg>
+);
+
+export const FilterIcon: React.FC = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
     </svg>
 );
 
@@ -59,13 +65,7 @@ export const TrashIcon: React.FC = () => (
 );
 
 export const CloseIcon: React.FC = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-    </svg>
-);
-
-export const FilterIcon: React.FC = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h8m-8 6h4" />
     </svg>
 );

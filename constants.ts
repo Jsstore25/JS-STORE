@@ -1,6 +1,6 @@
 import type { Product } from './types';
 
-export const WHATSAPP_LINK = "https://wa.me/5531991687046";
+export const WHATSAPP_LINK = "https://wa.me/5531991687046?text=Oi%2C%20tudo%20bem%3F%20Quero%20saber%20mais%20sobre%20os%20produtos";
 export const INSTAGRAM_LINK = "https://www.instagram.com/jsstore25_/";
 export const LOCATION_LINK = "https://www.google.com/maps/search/?api=1&query=Rua+Flemidark,+93,+Santa+Cecilia,+Belo+Horizonte,+MG,+30668-190";
 
