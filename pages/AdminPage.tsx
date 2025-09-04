@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { Product } from '../types';
-// Fix: Corrected typo from LOGO_BASE_64 to LOGO_BASE64.
 import { LOGO_BASE64 } from '../constants';
 import ProductFormModal from '../components/ProductFormModal';
-import { PlusIcon, UploadIcon, DownloadIcon } from '../components/Icons';
+import { PlusIcon } from '../components/Icons';
 
 interface AdminPageProps {
   products: Product[];
@@ -11,10 +10,9 @@ interface AdminPageProps {
   onAddProduct: (product: Omit<Product, 'id'>) => void;
   onUpdateProduct: (product: Product) => void;
   onDeleteProduct: (productId: number) => void;
-  onSetProducts: (products: Product[]) => void;
 }
 
-const AdminPage: React.FC<AdminPageProps> = ({ products, onLogout, onAddProduct, onUpdateProduct, onDeleteProduct, onSetProducts }) => {
+const AdminPage: React.FC<AdminPageProps> = ({ products, onLogout, onAddProduct, onUpdateProduct, onDeleteProduct }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   
@@ -27,9 +25,6 @@ const AdminPage: React.FC<AdminPageProps> = ({ products, onLogout, onAddProduct,
   const [shippingCost, setShippingCost] = useState('');
   const [shippingSuccess, setShippingSuccess] = useState('');
   const [shippingError, setShippingError] = useState('');
-
-  const [syncMessage, setSyncMessage] = useState({ type: '', text: '' });
-  const importInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const savedShippingCost = localStorage.getItem('standardShippingCost');
@@ -124,66 +119,6 @@ const AdminPage: React.FC<AdminPageProps> = ({ products, onLogout, onAddProduct,
     setShippingSuccess('Valor do frete salvo com sucesso!');
 
     setTimeout(() => setShippingSuccess(''), 3000);
-  };
-  
-  const handleExport = () => {
-    try {
-      const dataStr = JSON.stringify(products, null, 2);
-      const dataBlob = new Blob([dataStr], { type: 'application/json' });
-      const url = URL.createObjectURL(dataBlob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `jsstore_backup_${new Date().toISOString().split('T')[0]}.json`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-      setSyncMessage({ type: 'success', text: 'Dados exportados com sucesso!' });
-    } catch (error) {
-      console.error('Failed to export data:', error);
-      setSyncMessage({ type: 'error', text: 'Falha ao exportar dados.' });
-    }
-    setTimeout(() => setSyncMessage({ type: '', text: '' }), 3000);
-  };
-
-  const handleTriggerImport = () => {
-    importInputRef.current?.click();
-  };
-
-  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!window.confirm('Isso substituirá todos os produtos atuais com o conteúdo do arquivo. Deseja continuar?')) {
-        if (importInputRef.current) {
-          importInputRef.current.value = '';
-        }
-        return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-        try {
-            const content = event.target?.result as string;
-            const importedProducts = JSON.parse(content);
-            
-            if (!Array.isArray(importedProducts) || (importedProducts.length > 0 && typeof importedProducts[0].name === 'undefined')) {
-              throw new Error('Formato de arquivo inválido.');
-            }
-
-            onSetProducts(importedProducts as Product[]);
-            setSyncMessage({ type: 'success', text: 'Dados importados com sucesso!' });
-        } catch (error) {
-            console.error('Failed to import data:', error);
-            setSyncMessage({ type: 'error', text: 'Arquivo inválido ou corrompido.' });
-        } finally {
-            if (importInputRef.current) {
-              importInputRef.current.value = '';
-            }
-            setTimeout(() => setSyncMessage({ type: '', text: '' }), 3000);
-        }
-    };
-    reader.readAsText(file);
   };
 
   return (
@@ -342,40 +277,6 @@ const AdminPage: React.FC<AdminPageProps> = ({ products, onLogout, onAddProduct,
               </div>
             </form>
           </div>
-
-          <div className="bg-white shadow-md rounded-lg p-6 md:col-span-2">
-            <h2 className="text-2xl font-bold mb-4">Sincronização de Dados</h2>
-            <p className="text-sm text-gray-600 mb-4">
-                Exporte os dados dos seus produtos para um arquivo para importá-los em outro dispositivo (como do celular para o computador).
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4">
-                <input
-                    type="file"
-                    ref={importInputRef}
-                    onChange={handleImport}
-                    className="hidden"
-                    accept="application/json"
-                />
-                <button
-                    onClick={handleTriggerImport}
-                    className="w-full sm:w-auto flex items-center justify-center gap-2 bg-slate-600 text-white px-4 py-2 rounded-md hover:bg-slate-700 transition-colors"
-                >
-                    <UploadIcon /> Importar Dados
-                </button>
-                <button
-                    onClick={handleExport}
-                    className="w-full sm:w-auto flex items-center justify-center gap-2 bg-slate-600 text-white px-4 py-2 rounded-md hover:bg-slate-700 transition-colors"
-                >
-                    <DownloadIcon /> Exportar Dados
-                </button>
-            </div>
-            {syncMessage.text && (
-                <p className={`mt-4 text-sm ${syncMessage.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>
-                    {syncMessage.text}
-                </p>
-            )}
-        </div>
-
         </div>
       </main>
       {isModalOpen && (
