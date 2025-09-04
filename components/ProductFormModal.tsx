@@ -122,7 +122,6 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, on
     setImageError('');
     setIsAnalyzing(true);
     
-    // A análise com IA só será executada se os campos principais estiverem vazios.
     const shouldRunAi = !formData.name && !formData.price && !formData.description;
 
     try {
@@ -134,24 +133,19 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, on
         );
         const resizedImages = await Promise.all(resizePromises);
         
-        // 2. Adiciona as imagens ao estado do formulário
+        // 2. Adiciona as imagens redimensionadas ao estado do formulário
         setFormData(prev => ({
             ...prev,
             imageUrls: [...prev.imageUrls, ...resizedImages]
         }));
 
-        // 3. Executa a análise de IA se for um novo produto
-        if (shouldRunAi) {
-            const firstFile = fileArray[0];
-            
-            // Converte o arquivo para base64 para a API
-            const base64String = await new Promise<string>((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result as string);
-                reader.onerror = reject;
-                reader.readAsDataURL(firstFile);
-            });
-            const base64Data = base64String.split(',')[1];
+        // 3. Executa a análise de IA na primeira imagem redimensionada, se for um novo produto
+        if (shouldRunAi && resizedImages.length > 0) {
+            const firstResizedImageDataUrl = resizedImages[0];
+            const firstFile = fileArray[0]; // Usado para obter o MIME type original
+
+            // Extrai os dados base64 da imagem já redimensionada
+            const base64Data = firstResizedImageDataUrl.split(',')[1];
 
             const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
             const subcategoriesForPrompt = SUBCATEGORIES[formData.category].join(', ');
@@ -193,10 +187,12 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, on
 
     } catch (error) {
         console.error("Error processing images:", error);
-        setImageError('Não foi possível processar uma das imagens.');
+        setImageError('Não foi possível processar uma das imagens. Tente novamente.');
     } finally {
        setIsAnalyzing(false);
-       e.target.value = ''; // Reseta o input para poder selecionar os mesmos arquivos novamente
+       if (e.target) {
+         e.target.value = ''; // Reseta o input para poder selecionar os mesmos arquivos novamente
+       }
     }
   };
   
