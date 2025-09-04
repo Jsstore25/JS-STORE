@@ -121,74 +121,82 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, on
 
     setImageError('');
     setIsAnalyzing(true);
+    
+    // A análise com IA só será executada se os campos principais estiverem vazios.
+    const shouldRunAi = !formData.name && !formData.price && !formData.description;
 
     try {
-        // 1. Redimensiona e comprime todas as imagens selecionadas
-        const resizePromises = Array.from(files).map(file => 
-            resizeImage(file, 1024, 1024, 0.8) // Max 1024px, 80% qualidade
+        const fileArray = Array.from(files);
+
+        // 1. Redimensiona todas as imagens selecionadas
+        const resizePromises = fileArray.map(file => 
+            resizeImage(file, 1024, 1024, 0.8)
         );
-
         const resizedImages = await Promise.all(resizePromises);
-        setFormData(prev => ({ ...prev, imageUrls: [...prev.imageUrls, ...resizedImages] }));
-
-        // 2. Analisa a primeira imagem *original* com IA para obter detalhes
-        const firstFile = files[0];
-        const readerForAnalysis = new FileReader();
-        readerForAnalysis.onloadend = async () => {
-            try {
-                const base64Data = (readerForAnalysis.result as string).split(',')[1];
-                
-                const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-                const subcategoriesForPrompt = SUBCATEGORIES[formData.category].join(', ');
-
-                const response = await ai.models.generateContent({
-                    model: 'gemini-2.5-flash',
-                    contents: {
-                        parts: [
-                            { inlineData: { mimeType: firstFile.type, data: base64Data } },
-                            { text: `Você é um assistente de e-commerce especialista. Analise a imagem do produto. Forneça detalhes em JSON, incluindo "name" (nome atrativo), "price" (preço em "R$ XXX,XX"), "description" (2-3 frases), e "subcategory" da lista: [${subcategoriesForPrompt}].` }
-                        ]
-                    },
-                    config: {
-                      responseMimeType: "application/json",
-                      responseSchema: {
-                        type: Type.OBJECT,
-                        properties: {
-                          name: { type: Type.STRING, description: "Nome do produto." },
-                          price: { type: Type.STRING, description: "Preço formatado como R$ XX,XX." },
-                          description: { type: Type.STRING, description: "Descrição do produto." },
-                          subcategory: { type: Type.STRING, description: "Subcategoria da lista fornecida." }
-                        },
-                        required: ['name', 'price', 'description', 'subcategory']
-                      }
-                    }
-                });
-
-                const parsedData = JSON.parse(response.text);
-
-                setFormData(prev => ({
-                    ...prev,
-                    name: prev.name || parsedData.name || '',
-                    price: prev.price || parsedData.price || '',
-                    description: prev.description || parsedData.description || '',
-                    subcategory: SUBCATEGORIES[prev.category].includes(parsedData.subcategory) ? parsedData.subcategory : prev.subcategory,
-                }));
-
-            } catch (error) {
-                console.error("Error analyzing image with AI:", error);
-                setImageError('Falha ao analisar a imagem. Por favor, preencha os detalhes manualmente.');
-            } finally {
-                setIsAnalyzing(false);
-            }
-        };
-        readerForAnalysis.readAsDataURL(firstFile);
         
+        // 2. Adiciona as imagens ao estado do formulário
+        setFormData(prev => ({
+            ...prev,
+            imageUrls: [...prev.imageUrls, ...resizedImages]
+        }));
+
+        // 3. Executa a análise de IA se for um novo produto
+        if (shouldRunAi) {
+            const firstFile = fileArray[0];
+            
+            // Converte o arquivo para base64 para a API
+            const base64String = await new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result as string);
+                reader.onerror = reject;
+                reader.readAsDataURL(firstFile);
+            });
+            const base64Data = base64String.split(',')[1];
+
+            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            const subcategoriesForPrompt = SUBCATEGORIES[formData.category].join(', ');
+
+            const response = await ai.models.generateContent({
+                model: 'gemini-2.5-flash',
+                contents: {
+                    parts: [
+                        { inlineData: { mimeType: firstFile.type, data: base64Data } },
+                        { text: `Você é um assistente de e-commerce especialista. Analise a imagem do produto. Forneça detalhes em JSON, incluindo "name" (nome atrativo), "price" (preço em "R$ XXX,XX"), "description" (2-3 frases), e "subcategory" da lista: [${subcategoriesForPrompt}].` }
+                    ]
+                },
+                config: {
+                  responseMimeType: "application/json",
+                  responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                      name: { type: Type.STRING, description: "Nome do produto." },
+                      price: { type: Type.STRING, description: "Preço formatado como R$ XX,XX." },
+                      description: { type: Type.STRING, description: "Descrição do produto." },
+                      subcategory: { type: Type.STRING, description: "Subcategoria da lista fornecida." }
+                    },
+                    required: ['name', 'price', 'description', 'subcategory']
+                  }
+                }
+            });
+
+            const parsedData = JSON.parse(response.text);
+
+            // 4. Atualiza o formulário com os dados da IA
+            setFormData(prev => ({
+                ...prev,
+                name: parsedData.name || '',
+                price: parsedData.price || '',
+                description: parsedData.description || '',
+                subcategory: SUBCATEGORIES[prev.category].includes(parsedData.subcategory) ? parsedData.subcategory : prev.subcategory,
+            }));
+        }
+
     } catch (error) {
         console.error("Error processing images:", error);
         setImageError('Não foi possível processar uma das imagens.');
-        setIsAnalyzing(false);
     } finally {
-       e.target.value = ''; // Reseta o input de arquivo
+       setIsAnalyzing(false);
+       e.target.value = ''; // Reseta o input para poder selecionar os mesmos arquivos novamente
     }
   };
   
