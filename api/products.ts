@@ -56,116 +56,94 @@ let products: Product[] = JSON.parse(JSON.stringify(INITIAL_PRODUCTS));
 
 
 export default async function handler(req: Request) {
-  const { method } = req;
-  
   try {
-    // A abordagem de usar uma base dummy é robusta para extrair o pathname e
-    // searchParams de forma confiável, independentemente do ambiente.
     const url = new URL(req.url, `http://dummy.base`);
-    
-    // Rota para importar/substituir todos os dados
-    if (url.pathname === '/api/products/import') {
-      if (method === 'POST') {
-        const importedProducts = await req.json();
-        if (!Array.isArray(importedProducts)) {
-           return new Response(JSON.stringify({ error: 'Body must be an array of products' }), { 
-                status: 400, 
-                headers: { 'Content-Type': 'application/json' } 
-            });
-        }
-        products = importedProducts; // Substitui completamente os dados em memória
-        return new Response(JSON.stringify({ message: 'Products imported successfully' }), {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' },
+    const { pathname } = url;
+    const { method } = req;
+
+    // Rota específica para importação de dados
+    if (method === 'POST' && pathname === '/api/products/import') {
+      const importedProducts = await req.json();
+      if (!Array.isArray(importedProducts)) {
+        return new Response(JSON.stringify({ error: 'Body must be an array of products' }), { 
+          status: 400, 
+          headers: { 'Content-Type': 'application/json' } 
         });
-      } else {
-        const headers = new Headers();
-        headers.set('Allow', 'POST');
-        return new Response('Method Not Allowed for /import', { status: 405, headers });
       }
+      products = importedProducts; // Substitui completamente os dados em memória
+      return new Response(JSON.stringify({ message: 'Products imported successfully' }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     // Rotas CRUD padrão para /api/products
-    if (url.pathname === '/api/products') {
-        const id = url.searchParams.get('id');
+    if (pathname === '/api/products') {
+      const idParam = url.searchParams.get('id');
 
-        switch (method) {
-        // GET /api/products
+      switch (method) {
         case 'GET':
-            return new Response(JSON.stringify(products), {
+          return new Response(JSON.stringify(products), {
             status: 200,
             headers: { 'Content-Type': 'application/json' },
-            });
+          });
 
-        // POST /api/products
         case 'POST': {
-            const newProductData = await req.json();
-            const newProduct: Product = {
+          const newProductData = await req.json();
+          const newProduct: Product = {
             ...newProductData,
             id: Date.now(), // Gera um ID único baseado no timestamp
             reviews: newProductData.reviews || [],
-            };
-            products.push(newProduct);
-            return new Response(JSON.stringify(newProduct), {
+          };
+          products.push(newProduct);
+          return new Response(JSON.stringify(newProduct), {
             status: 201, // 201 Created
             headers: { 'Content-Type': 'application/json' },
-            });
+          });
         }
 
-        // PUT /api/products?id=<id>
         case 'PUT': {
-            if (!id) {
-                return new Response(JSON.stringify({ error: 'Product ID is required' }), { 
-                    status: 400, 
-                    headers: { 'Content-Type': 'application/json' } 
-                });
-            }
-            const updatedProductData = await req.json();
-            const productIndex = products.findIndex(p => p.id === parseInt(id));
+          if (!idParam) {
+            return new Response(JSON.stringify({ error: 'Product ID is required' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+          }
+          const id = parseInt(idParam, 10);
+          const updatedProductData = await req.json();
+          const productIndex = products.findIndex(p => p.id === id);
 
-            if (productIndex === -1) {
-                return new Response(JSON.stringify({ error: 'Product not found' }), { 
-                    status: 404, 
-                    headers: { 'Content-Type': 'application/json' } 
-                });
-            }
-            
-            products[productIndex] = { ...products[productIndex], ...updatedProductData };
-            return new Response(JSON.stringify(products[productIndex]), {
+          if (productIndex === -1) {
+            return new Response(JSON.stringify({ error: 'Product not found' }), { status: 404, headers: { 'Content-Type': 'application/json' } });
+          }
+          
+          products[productIndex] = { ...products[productIndex], ...updatedProductData };
+          return new Response(JSON.stringify(products[productIndex]), {
             status: 200,
             headers: { 'Content-Type': 'application/json' },
-            });
+          });
         }
             
-        // DELETE /api/products?id=<id>
         case 'DELETE': {
-            if (!id) {
-                return new Response(JSON.stringify({ error: 'Product ID is required' }), { 
-                    status: 400, 
-                    headers: { 'Content-Type': 'application/json' } 
-                });
-            }
-            const initialLength = products.length;
-            products = products.filter(p => p.id !== parseInt(id));
+          if (!idParam) {
+            return new Response(JSON.stringify({ error: 'Product ID is required' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+          }
+          const id = parseInt(idParam, 10);
+          const initialLength = products.length;
+          products = products.filter(p => p.id !== id);
             
-            if (products.length === initialLength) {
-            return new Response(JSON.stringify({ error: 'Product not found' }), { 
-                status: 404, 
-                headers: { 'Content-Type': 'application/json' } 
-            });
-            }
+          if (products.length === initialLength) {
+            return new Response(JSON.stringify({ error: 'Product not found' }), { status: 404, headers: { 'Content-Type': 'application/json' } });
+          }
             
-            return new Response(null, { status: 204 }); // 204 No Content
+          return new Response(null, { status: 204 }); // 204 No Content
         }
 
         default:
-            const headers = new Headers();
-            headers.set('Allow', 'GET, POST, PUT, DELETE');
-            return new Response('Method Not Allowed', { status: 405, headers });
-        }
+          const headers = new Headers();
+          headers.set('Allow', 'GET, POST, PUT, DELETE');
+          return new Response('Method Not Allowed', { status: 405, headers });
+      }
     }
     
-    // Se o caminho não for nenhum dos anteriores, retorna 404.
+    // Se nenhuma rota corresponder, retorna 404
     return new Response(JSON.stringify({ error: 'Not Found' }), {
       status: 404,
       headers: { 'Content-Type': 'application/json' },
