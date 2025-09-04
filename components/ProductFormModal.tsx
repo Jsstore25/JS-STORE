@@ -127,9 +127,9 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, on
     try {
         const fileArray = Array.from(files);
 
-        // 1. Redimensiona todas as imagens selecionadas
+        // 1. Redimensiona todas as imagens selecionadas com maior otimização
         const resizePromises = fileArray.map(file => 
-            resizeImage(file, 1024, 1024, 0.8)
+            resizeImage(file, 800, 800, 0.7)
         );
         const resizedImages = await Promise.all(resizePromises);
         
