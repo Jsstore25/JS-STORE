@@ -3,7 +3,7 @@ export interface Product {
   name: string;
   price: string;
   imageUrls: string[];
-  category: 'Mulher' | 'Homem';
+  category: 'Feminino' | 'Masculino';
   subcategory: string;
   description?: string;
 }

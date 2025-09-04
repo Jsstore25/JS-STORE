@@ -80,8 +80,8 @@ const StorePage: React.FC<StorePageProps> = ({ products }) => {
     }, {} as Record<string, Set<string>>);
 
     return {
-      Mulher: Array.from(subcategoriesByCategory['Mulher'] || []).sort(),
-      Homem: Array.from(subcategoriesByCategory['Homem'] || []).sort()
+      Feminino: Array.from(subcategoriesByCategory['Feminino'] || []).sort(),
+      Masculino: Array.from(subcategoriesByCategory['Masculino'] || []).sort()
     }
   }, [products]);
 
@@ -177,7 +177,7 @@ const StorePage: React.FC<StorePageProps> = ({ products }) => {
     }, {} as Record<string, Product[]>);
   }, [processedProducts]);
 
-  const categories = ['Mulher', 'Homem'];
+  const categories = ['Feminino', 'Masculino'];
   
   const scrollToContent = () => {
     mainContentRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -278,7 +278,7 @@ const StorePage: React.FC<StorePageProps> = ({ products }) => {
                           placeholder="Mín."
                           value={priceRange.min}
                           onChange={handlePriceChange}
-                          className="w-full p-2 pl-8 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-pink-400"
+                          className="w-full bg-white p-2 pl-8 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-pink-400"
                           aria-label="Preço mínimo"
                           inputMode="numeric"
                           pattern="[0-9]*"
@@ -293,7 +293,7 @@ const StorePage: React.FC<StorePageProps> = ({ products }) => {
                           placeholder="Máx."
                           value={priceRange.max}
                           onChange={handlePriceChange}
-                          className="w-full p-2 pl-8 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-pink-400"
+                          className="w-full bg-white p-2 pl-8 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-pink-400"
                           aria-label="Preço máximo"
                           inputMode="numeric"
                           pattern="[0-9]*"
@@ -348,7 +348,7 @@ const StorePage: React.FC<StorePageProps> = ({ products }) => {
                         placeholder="Buscar por nome..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-full shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-400 focus:border-transparent transition-shadow"
+                        className="w-full bg-white pl-10 pr-4 py-3 border border-gray-300 rounded-full shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-400 focus:border-transparent transition-shadow"
                     />
                     <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
                         <SearchIcon />

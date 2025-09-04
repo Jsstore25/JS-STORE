@@ -19,16 +19,27 @@ const App: React.FC = () => {
         
         if (Array.isArray(parsedProducts)) {
           const migratedProducts = parsedProducts.map((p: any): Product => {
-            // Se o produto for de uma versão antiga com `imageUrl`
-            if (p.imageUrl && typeof p.imageUrl === 'string' && !p.imageUrls) {
-              const { imageUrl, ...rest } = p;
-              return { ...rest, imageUrls: [imageUrl] };
+            let product = { ...p };
+
+            // Migra imageUrl para imageUrls
+            if (product.imageUrl && typeof product.imageUrl === 'string' && !product.imageUrls) {
+              const { imageUrl, ...rest } = product;
+              product = { ...rest, imageUrls: [imageUrl] };
             }
-            // Garante que `imageUrls` seja um array, prevenindo corrupção de dados
-            if (!Array.isArray(p.imageUrls)) {
-                p.imageUrls = [];
+            
+            // Garante que `imageUrls` seja um array
+            if (!Array.isArray(product.imageUrls)) {
+                product.imageUrls = [];
             }
-            return p;
+
+            // Migra as categorias
+            if (product.category === 'Mulher') {
+              product.category = 'Feminino';
+            } else if (product.category === 'Homem') {
+              product.category = 'Masculino';
+            }
+            
+            return product;
           });
           return migratedProducts;
         }

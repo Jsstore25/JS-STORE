@@ -15,7 +15,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, on
     name: '',
     price: '',
     imageUrls: [] as string[],
-    category: 'Mulher' as 'Mulher' | 'Homem',
+    category: 'Feminino' as 'Feminino' | 'Masculino',
     subcategory: '',
     description: '',
   });
@@ -33,7 +33,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, on
         description: product.description || '',
       });
     } else {
-      const defaultCategory = 'Mulher';
+      const defaultCategory = 'Feminino';
       const defaultSubcategory = SUBCATEGORIES[defaultCategory][0] || '';
       setFormData({
         name: '',
@@ -52,7 +52,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, on
     const { name, value } = e.target;
     
     if (name === 'category') {
-      const newCategory = value as 'Mulher' | 'Homem';
+      const newCategory = value as 'Feminino' | 'Masculino';
       const firstSubcategory = SUBCATEGORIES[newCategory][0] || '';
       setFormData(prev => ({ 
         ...prev, 
@@ -204,8 +204,8 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, on
           <div>
             <label htmlFor="category" className="block text-sm font-medium text-gray-700">Categoria</label>
             <select name="category" id="category" value={formData.category} onChange={handleChange} className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500">
-              <option value="Mulher">Mulher</option>
-              <option value="Homem">Homem</option>
+              <option value="Feminino">Feminino</option>
+              <option value="Masculino">Masculino</option>
             </select>
           </div>
            <div>
