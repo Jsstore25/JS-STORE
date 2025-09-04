@@ -20,12 +20,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onViewDetails
       onClick={() => onViewDetails(product)}
       aria-label={`Ver detalhes de ${product.name}`}
     >
-      <div className="relative rounded-t-lg overflow-hidden">
+      <div className="relative rounded-t-lg overflow-hidden bg-slate-100">
         <img
           src={product.imageUrls[0]}
           alt={product.name}
           loading="lazy"
-          className="w-full h-72 object-cover transition-transform duration-500 ease-in-out group-hover:scale-105"
+          className="w-full h-72 object-contain transition-transform duration-500 ease-in-out group-hover:scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-70 group-hover:opacity-100 transition-opacity duration-300"></div>
          <div className="absolute bottom-0 left-0 right-0 p-4 transform translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-in-out">

@@ -108,7 +108,7 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product, onClos
                     key={index}
                     src={url}
                     alt={`${product.name} - imagem ${index + 1}`}
-                    className="w-full h-full object-cover flex-shrink-0 snap-center"
+                    className="w-full h-full object-contain flex-shrink-0 snap-center"
                     loading={index === 0 ? 'eager' : 'lazy'}
                 />
             ))}
