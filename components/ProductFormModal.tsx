@@ -46,7 +46,8 @@ const resizeImage = (file: File, maxWidth: number, maxHeight: number, quality: n
                 }
                 ctx.drawImage(img, 0, 0, width, height);
                 
-                const dataUrl = canvas.toDataURL(file.type === 'image/png' ? 'image/png' : 'image/jpeg', quality);
+                // Força a conversão para JPEG para garantir a melhor compressão para fotos.
+                const dataUrl = canvas.toDataURL('image/jpeg', quality);
                 resolve(dataUrl);
             };
             img.onerror = (error) => reject(error);
@@ -129,7 +130,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, on
 
         // 1. Redimensiona todas as imagens com maior otimização para evitar limite de storage
         const resizePromises = fileArray.map(file => 
-            resizeImage(file, 600, 600, 0.7)
+            resizeImage(file, 500, 500, 0.7)
         );
         const resizedImages = await Promise.all(resizePromises);
         
