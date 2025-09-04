@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import type { Product } from './types';
+import type { Product, Review } from './types';
 import { INITIAL_PRODUCTS } from './constants';
 import LoginPage from './pages/LoginPage';
 import AdminPage from './pages/AdminPage';
@@ -99,6 +99,23 @@ const App: React.FC = () => {
   const handleSetProducts = (newProducts: Product[]) => {
     setProducts(newProducts);
   };
+  
+  const handleAddReview = (productId: number, reviewData: Omit<Review, 'id' | 'date'>) => {
+    setProducts(prevProducts => {
+      return prevProducts.map(p => {
+        if (p.id === productId) {
+          const newReview: Review = {
+            ...reviewData,
+            id: Date.now(),
+            date: new Date().toISOString(),
+          };
+          const updatedReviews = p.reviews ? [...p.reviews, newReview] : [newReview];
+          return { ...p, reviews: updatedReviews };
+        }
+        return p;
+      });
+    });
+  };
 
   if (currentPath.startsWith('#/admin')) {
     if (isAdmin) {
@@ -117,7 +134,7 @@ const App: React.FC = () => {
     }
   }
 
-  return <StorePage products={products} />;
+  return <StorePage products={products} onAddReview={handleAddReview} />;
 };
 
 export default App;

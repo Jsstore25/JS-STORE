@@ -19,6 +19,22 @@ export const INITIAL_PRODUCTS: Product[] = [
     imageUrls: ["https://images.unsplash.com/photo-1605348532760-6753d2c43329?auto=format&fit=crop&w=800&q=80"], 
     category: "Feminino", 
     subcategory: "Calçados", 
-    description: "Tênis slip on super confortável e estiloso, com design moderno e prático para o dia a dia. Tamanhos disponíveis do 34 ao 39." 
+    description: "Tênis slip on super confortável e estiloso, com design moderno e prático para o dia a dia. Tamanhos disponíveis do 34 ao 39.",
+    reviews: [
+      {
+        id: 1,
+        author: "Ana P.",
+        rating: 5,
+        comment: "Amei o tênis! Super confortável e a cor é linda. Chegou antes do prazo.",
+        date: "2024-05-20T10:00:00Z"
+      },
+      {
+        id: 2,
+        author: "Carlos",
+        rating: 4,
+        comment: "Produto de boa qualidade, corresponde à descrição. Apenas um pouco apertado no início.",
+        date: "2024-05-18T15:30:00Z"
+      }
+    ]
   },
 ];

@@ -1,11 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
-import type { Product } from '../types';
-import { CloseIcon, PlusIcon, MinusIcon, ShoppingBagIcon } from './Icons';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import type { Product, Review } from '../types';
+import { CloseIcon, PlusIcon, MinusIcon, ShoppingBagIcon, StarIcon } from './Icons';
 
 interface ProductDetailModalProps {
   product: Product | null;
   onClose: () => void;
   onAddToCart: (product: Product, quantity: number) => void;
+  onAddReview: (productId: number, reviewData: Omit<Review, 'id' | 'date'>) => void;
 }
 
 const ChevronLeftIcon: React.FC = () => (
@@ -20,17 +21,45 @@ const ChevronRightIcon: React.FC = () => (
     </svg>
 );
 
-const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product, onClose, onAddToCart }) => {
+const StarRating: React.FC<{ rating: number; className?: string }> = ({ rating, className }) => (
+  <div className={`flex items-center ${className}`}>
+    {[...Array(5)].map((_, i) => (
+      <StarIcon key={i} filled={i < rating} />
+    ))}
+  </div>
+);
+
+
+const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product, onClose, onAddToCart, onAddReview }) => {
   const [quantity, setQuantity] = useState(1);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  
+  // State for new review form
+  const [reviewAuthor, setReviewAuthor] = useState('');
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewComment, setReviewComment] = useState('');
+  const [hoverRating, setHoverRating] = useState(0);
+  const [reviewError, setReviewError] = useState('');
 
 
   useEffect(() => {
     if (product) {
       setQuantity(1);
       setCurrentImageIndex(0);
+      setReviewAuthor('');
+      setReviewRating(0);
+      setReviewComment('');
+      setReviewError('');
     }
+  }, [product]);
+
+  const averageRating = useMemo(() => {
+    if (!product || !product.reviews || product.reviews.length === 0) {
+      return 0;
+    }
+    const total = product.reviews.reduce((sum, review) => sum + review.rating, 0);
+    return total / product.reviews.length;
   }, [product]);
 
   if (!product) {
@@ -44,6 +73,19 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product, onClos
   const handleAddToCartClick = () => {
     onAddToCart(product, quantity);
     onClose();
+  };
+
+  const handleSubmitReview = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!reviewAuthor.trim() || !reviewComment.trim() || reviewRating === 0) {
+      setReviewError("Por favor, preencha seu nome, selecione uma nota e escreva um comentário.");
+      return;
+    }
+    onAddReview(product.id, { author: reviewAuthor, rating: reviewRating, comment: reviewComment });
+    setReviewAuthor('');
+    setReviewRating(0);
+    setReviewComment('');
+    setReviewError('');
   };
   
   const handleScroll = () => {
@@ -149,6 +191,12 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product, onClos
           <div>
             <span className="text-sm font-semibold text-pink-500 uppercase tracking-wider">{product.subcategory}</span>
             <h2 id="product-detail-heading" className="text-3xl md:text-4xl font-serif font-bold text-slate-900 mt-2">{product.name}</h2>
+            <div className="flex items-center gap-2 mt-2">
+                {averageRating > 0 && <StarRating rating={averageRating} />}
+                <span className="text-sm text-slate-500">
+                    {product.reviews?.length ? `${product.reviews.length} avaliaç${product.reviews.length > 1 ? 'ões' : 'ão'}` : 'Nenhuma avaliação'}
+                </span>
+            </div>
             <p className="text-3xl font-bold text-slate-800 mt-4">{product.price}</p>
           </div>
           
@@ -156,6 +204,83 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product, onClos
             <p>{product.description || 'Nenhuma descrição disponível para este produto.'}</p>
           </div>
           
+          <div className="mt-6 border-t pt-6">
+            <h3 className="text-xl font-bold text-slate-800 mb-4">Avaliações de Clientes</h3>
+            <div className="space-y-6 max-h-48 overflow-y-auto pr-2">
+              {(!product.reviews || product.reviews.length === 0) ? (
+                <p className="text-slate-500 text-sm">Ainda não há avaliações para este produto. Seja o primeiro a avaliar!</p>
+              ) : (
+                [...product.reviews].reverse().map(review => (
+                  <div key={review.id} className="border-b pb-4 last:border-b-0">
+                    <div className="flex justify-between items-center">
+                      <p className="font-bold text-slate-700">{review.author}</p>
+                      <StarRating rating={review.rating} />
+                    </div>
+                    <p className="text-xs text-slate-400 mt-1">{new Date(review.date).toLocaleDateString('pt-BR')}</p>
+                    <p className="text-slate-600 mt-2 text-sm">{review.comment}</p>
+                  </div>
+                ))
+              )}
+            </div>
+            
+            <form onSubmit={handleSubmitReview} className="mt-6 border-t pt-6 bg-slate-50 p-4 rounded-lg">
+                <h4 className="font-bold text-md text-slate-700 mb-3">Deixe sua avaliação</h4>
+                <div className="space-y-4">
+                  <div>
+                    <label htmlFor="reviewAuthor" className="text-sm font-medium text-gray-700 sr-only">Seu nome</label>
+                    <input
+                      type="text"
+                      id="reviewAuthor"
+                      value={reviewAuthor}
+                      onChange={(e) => setReviewAuthor(e.target.value)}
+                      placeholder="Seu nome"
+                      required
+                      className="w-full p-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-pink-400"
+                    />
+                  </div>
+                   <div>
+                      <label className="text-sm font-medium text-gray-700 mb-1 block">Sua nota</label>
+                      <div className="flex items-center" onMouseLeave={() => setHoverRating(0)}>
+                        {[...Array(5)].map((_, i) => {
+                          const ratingValue = i + 1;
+                          return (
+                            <button
+                              type="button"
+                              key={ratingValue}
+                              onClick={() => setReviewRating(ratingValue)}
+                              onMouseEnter={() => setHoverRating(ratingValue)}
+                              className="focus:outline-none"
+                              aria-label={`Dar ${ratingValue} estrelas`}
+                            >
+                              <StarIcon
+                                className="w-6 h-6 cursor-pointer"
+                                filled={ratingValue <= (hoverRating || reviewRating)}
+                              />
+                            </button>
+                          );
+                        })}
+                      </div>
+                   </div>
+                  <div>
+                    <label htmlFor="reviewComment" className="text-sm font-medium text-gray-700 sr-only">Seu comentário</label>
+                    <textarea
+                      id="reviewComment"
+                      rows={3}
+                      value={reviewComment}
+                      onChange={(e) => setReviewComment(e.target.value)}
+                      placeholder="Escreva sua avaliação aqui..."
+                      required
+                      className="w-full p-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-pink-400"
+                    />
+                  </div>
+                   {reviewError && <p className="text-sm text-red-600">{reviewError}</p>}
+                  <button type="submit" className="w-full bg-slate-700 text-white py-2 rounded-lg font-semibold hover:bg-slate-800 transition-colors text-sm">
+                    Enviar Avaliação
+                  </button>
+                </div>
+            </form>
+          </div>
+
           <div className="mt-8 pt-6 border-t">
             <div className="flex items-center gap-6 mb-6">
               <label htmlFor="quantity" className="font-semibold text-slate-700">Quantidade:</label>

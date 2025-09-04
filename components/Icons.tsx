@@ -87,3 +87,9 @@ export const DownloadIcon: React.FC = () => (
         <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
     </svg>
 );
+
+export const StarIcon: React.FC<{ filled?: boolean; className?: string }> = ({ filled, className = "w-5 h-5" }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className={`${className} ${filled ? 'text-yellow-400' : 'text-gray-300'}`}>
+    <path fillRule="evenodd" d="M10.868 2.884c.321-.662 1.215-.662 1.536 0l1.681 3.462a1 1 0 00.951.691h3.634c.725 0 1.026.983.475 1.442l-2.938 2.14a1 1 0 00-.364 1.118l1.681 3.462c.321.662-.525 1.25-1.102.81l-2.938-2.14a1 1 0 00-1.175 0l-2.938 2.14c-.577.44-1.423.148-1.102-.81l1.681-3.462a1 1 0 00-.364-1.118L2.053 8.479c-.551-.459-.25-1.442.475-1.442h3.634a1 1 0 00.95-.691l1.681-3.462z" clipRule="evenodd" />
+  </svg>
+);

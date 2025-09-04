@@ -5,7 +5,7 @@ import { SearchIcon, FilterIcon, CloseIcon } from '../components/Icons';
 import { Cart } from '../components/Cart';
 import ProductDetailModal from '../components/ProductDetailModal';
 import { PaymentMethods } from '../components/PaymentIcons';
-import type { Product, CartItem } from '../types';
+import type { Product, CartItem, Review } from '../types';
 import { SUBCATEGORIES } from '../constants';
 
 const BANNER_IMAGE_URL = "https://images.unsplash.com/photo-1445205170230-053b83016050?auto=format&fit=crop&w=1600&q=80";
@@ -23,9 +23,10 @@ const parsePrice = (priceStr: string): number => {
 
 interface StorePageProps {
   products: Product[];
+  onAddReview: (productId: number, reviewData: Omit<Review, 'id' | 'date'>) => void;
 }
 
-const StorePage: React.FC<StorePageProps> = ({ products }) => {
+const StorePage: React.FC<StorePageProps> = ({ products, onAddReview }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOrder, setSortOrder] = useState('default');
   const [activeCategoryFilters, setActiveCategoryFilters] = useState<string[]>([]);
@@ -189,6 +190,7 @@ const StorePage: React.FC<StorePageProps> = ({ products }) => {
         product={selectedProduct}
         onClose={() => setSelectedProduct(null)}
         onAddToCart={handleAddToCart}
+        onAddReview={onAddReview}
       />
 
       <div className="w-full bg-slate-200 shadow-inner flex flex-col md:flex-row overflow-hidden">
