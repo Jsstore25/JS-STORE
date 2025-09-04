@@ -163,7 +163,11 @@ const StorePage: React.FC<StorePageProps> = ({ products }) => {
     }, {} as Record<string, Product[]>);
   }, [processedProducts]);
 
-  const categories = ['Feminino', 'Masculino'];
+  const allCategories = useMemo(() => Object.keys(SUBCATEGORIES), []);
+
+  const displayedCategories = useMemo(() => {
+    return allCategories.filter(cat => productsByCategory[cat] && productsByCategory[cat].length > 0);
+  }, [allCategories, productsByCategory]);
   
   const scrollToContent = () => {
     mainContentRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -238,7 +242,7 @@ const StorePage: React.FC<StorePageProps> = ({ products }) => {
                   <div className="mb-6">
                       <h4 className="font-bold mb-3 text-lg text-pink-500">Categorias</h4>
                       <div className="space-y-2">
-                          {categories.map(category => (
+                          {allCategories.map(category => (
                               <div key={category} className="flex items-center">
                               <input
                                   type="checkbox"
@@ -288,7 +292,7 @@ const StorePage: React.FC<StorePageProps> = ({ products }) => {
                     </div>
                   </div>
 
-                  {categories.map(category => {
+                  {allCategories.map(category => {
                     const subcategories = SUBCATEGORIES[category as keyof typeof SUBCATEGORIES];
                     return (
                       subcategories && subcategories.length > 0 && (
@@ -359,8 +363,7 @@ const StorePage: React.FC<StorePageProps> = ({ products }) => {
                 </div>
             </div>
 
-            {categories.map(category => (
-            productsByCategory[category] && productsByCategory[category].length > 0 && (
+            {displayedCategories.map(category => (
                 <section key={category} className="mb-12">
                 <h2 className="text-3xl lg:text-4xl font-serif font-bold text-slate-800 mb-6 pb-2 border-b-2 border-pink-200">
                     {category}
@@ -371,7 +374,6 @@ const StorePage: React.FC<StorePageProps> = ({ products }) => {
                     ))}
                 </div>
                 </section>
-            )
             ))}
             
             {processedProducts.length === 0 && (
