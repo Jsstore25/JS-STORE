@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import type { Product } from '../types';
-import { CloseIcon, TrashIcon } from './Icons';
+import { CloseIcon, TrashIcon, SparklesIcon } from './Icons';
 import { SUBCATEGORIES } from '../constants';
+import { GoogleGenAI, Type } from '@google/genai';
 
 interface ProductFormModalProps {
   isOpen: boolean;
@@ -21,6 +22,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, on
   });
   const [priceError, setPriceError] = useState('');
   const [imageError, setImageError] = useState('');
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   useEffect(() => {
     if (product) {
@@ -46,6 +48,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, on
     }
     setPriceError('');
     setImageError('');
+    setIsAnalyzing(false);
   }, [product, isOpen]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -68,23 +71,83 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, on
     }
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (files) {
-        setImageError('');
-        for (let i = 0; i < files.length; i++) {
-            const file = files[i];
+    if (!files || files.length === 0) return;
+
+    setImageError('');
+
+    // 1. Adiciona todas as imagens para preview
+    const imagePromises = Array.from(files).map(file => {
+        return new Promise<string>((resolve, reject) => {
             const reader = new FileReader();
-            reader.onloadend = () => {
-                setFormData(prev => ({ ...prev, imageUrls: [...prev.imageUrls, reader.result as string] }));
-            };
-            reader.onerror = () => {
-                setImageError('Não foi possível ler um dos arquivos de imagem.');
-            };
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.onerror = reject;
             reader.readAsDataURL(file);
-        }
-        e.target.value = '';
+        });
+    });
+
+    try {
+        const results = await Promise.all(imagePromises);
+        setFormData(prev => ({...prev, imageUrls: [...prev.imageUrls, ...results]}));
+    } catch (error) {
+        setImageError('Não foi possível carregar uma das imagens.');
+        return;
     }
+
+    // 2. Analisa a primeira imagem com IA
+    const firstFile = files[0];
+    const readerForAnalysis = new FileReader();
+    readerForAnalysis.onloadend = async () => {
+        try {
+            setIsAnalyzing(true);
+            const base64Data = (readerForAnalysis.result as string).split(',')[1];
+            
+            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            const subcategoriesForPrompt = SUBCATEGORIES[formData.category].join(', ');
+
+            const response = await ai.models.generateContent({
+                model: 'gemini-2.5-flash',
+                contents: {
+                    parts: [
+                        { inlineData: { mimeType: firstFile.type, data: base64Data } },
+                        { text: `Você é um assistente de e-commerce especialista. Analise a imagem do produto. Forneça detalhes em JSON, incluindo "name" (nome atrativo), "price" (preço em "R$ XXX,XX"), "description" (2-3 frases), e "subcategory" da lista: [${subcategoriesForPrompt}].` }
+                    ]
+                },
+                config: {
+                  responseMimeType: "application/json",
+                  responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                      name: { type: Type.STRING, description: "Nome do produto." },
+                      price: { type: Type.STRING, description: "Preço formatado como R$ XX,XX." },
+                      description: { type: Type.STRING, description: "Descrição do produto." },
+                      subcategory: { type: Type.STRING, description: "Subcategoria da lista fornecida." }
+                    },
+                    required: ['name', 'price', 'description', 'subcategory']
+                  }
+                }
+            });
+
+            const parsedData = JSON.parse(response.text);
+
+            setFormData(prev => ({
+                ...prev,
+                name: prev.name || parsedData.name || '',
+                price: prev.price || parsedData.price || '',
+                description: prev.description || parsedData.description || '',
+                subcategory: SUBCATEGORIES[prev.category].includes(parsedData.subcategory) ? parsedData.subcategory : prev.subcategory,
+            }));
+
+        } catch (error) {
+            console.error("Error analyzing image with AI:", error);
+            setImageError('Falha ao analisar a imagem. Por favor, preencha os detalhes manualmente.');
+        } finally {
+            setIsAnalyzing(false);
+        }
+    };
+    readerForAnalysis.readAsDataURL(firstFile);
+    e.target.value = '';
   };
   
   const handleRemoveImage = (index: number) => {
@@ -129,7 +192,14 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, on
         className="bg-white rounded-lg shadow-xl p-6 w-full max-w-lg relative max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-gray-800" aria-label="Fechar modal">
+         {isAnalyzing && (
+            <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex flex-col justify-center items-center z-20 rounded-lg">
+                <SparklesIcon className="w-8 h-8 text-pink-500 animate-pulse" />
+                <p className="mt-2 font-bold text-slate-700">Analisando imagem com IA...</p>
+                <p className="text-sm text-slate-500">Aguarde, preenchendo detalhes.</p>
+            </div>
+        )}
+        <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 z-10" aria-label="Fechar modal">
           <CloseIcon />
         </button>
         <h2 className="text-xl font-bold mb-4">{product ? 'Editar Produto' : 'Adicionar Produto'}</h2>
@@ -194,9 +264,10 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, on
               />
               <label
                 htmlFor="imageUpload"
-                className="cursor-pointer bg-white py-2 px-3 border border-gray-300 rounded-md shadow-sm text-sm leading-4 font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500"
+                className="cursor-pointer bg-pink-50 text-pink-700 py-2 px-3 border border-pink-200 rounded-md shadow-sm text-sm leading-4 font-medium hover:bg-pink-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500 inline-flex items-center gap-2"
               >
-                Adicionar Imagens
+                 <SparklesIcon className="w-5 h-5"/>
+                Adicionar Imagens (com IA)
               </label>
             </div>
             {imageError && <p id="image-error" className="mt-1 text-sm text-red-600">{imageError}</p>}
