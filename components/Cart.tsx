@@ -92,7 +92,7 @@ export const Cart: React.FC<CartProps> = ({ isOpen, onClose, cartItems, onUpdate
     return encodeURIComponent(header + items + footer + shippingLine + totalLine);
   }, [cartItems, formattedSubtotal, formattedShippingCost, formattedTotalPrice, shippingCost]);
 
-  const whatsappCheckoutLink = `${WHATSAPP_LINK}?text=${checkoutMessage}`;
+  const whatsappCheckoutLink = `${WHATSAPP_LINK.split('?')[0]}?text=${checkoutMessage}`;
 
   return (
     <>
@@ -178,7 +178,7 @@ export const Cart: React.FC<CartProps> = ({ isOpen, onClose, cartItems, onUpdate
                             value={cep}
                             onChange={(e) => setCep(e.target.value)}
                             maxLength={9}
-                            className="w-full p-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-pink-400"
+                            className="w-full p-2 bg-white border border-gray-300 rounded-md text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-pink-400"
                           />
                           <button onClick={handleCalculateShipping} className="bg-slate-200 text-slate-700 px-4 py-2 rounded-md hover:bg-slate-300 text-sm font-semibold whitespace-nowrap">Calcular</button>
                         </div>
