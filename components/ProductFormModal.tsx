@@ -127,24 +127,22 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, on
     try {
         const fileArray = Array.from(files);
 
-        // 1. Redimensiona todas as imagens selecionadas com maior otimização
+        // 1. Redimensiona todas as imagens com maior otimização para evitar limite de storage
         const resizePromises = fileArray.map(file => 
-            resizeImage(file, 800, 800, 0.7)
+            resizeImage(file, 600, 600, 0.7)
         );
         const resizedImages = await Promise.all(resizePromises);
         
-        // 2. Adiciona as imagens redimensionadas ao estado do formulário
         setFormData(prev => ({
             ...prev,
             imageUrls: [...prev.imageUrls, ...resizedImages]
         }));
 
-        // 3. Executa a análise de IA na primeira imagem redimensionada, se for um novo produto
         if (shouldRunAi && resizedImages.length > 0) {
             const firstResizedImageDataUrl = resizedImages[0];
-            const firstFile = fileArray[0]; // Usado para obter o MIME type original
-
-            // Extrai os dados base64 da imagem já redimensionada
+            
+            // 2. Extrai o MimeType e os dados corretos da imagem JÁ redimensionada
+            const mimeType = firstResizedImageDataUrl.substring(5, firstResizedImageDataUrl.indexOf(';'));
             const base64Data = firstResizedImageDataUrl.split(',')[1];
 
             const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -154,7 +152,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, on
                 model: 'gemini-2.5-flash',
                 contents: {
                     parts: [
-                        { inlineData: { mimeType: firstFile.type, data: base64Data } },
+                        { inlineData: { mimeType: mimeType, data: base64Data } },
                         { text: `Você é um assistente de e-commerce especialista. Analise a imagem do produto. Forneça detalhes em JSON, incluindo "name" (nome atrativo), "price" (preço em "R$ XXX,XX"), "description" (2-3 frases), e "subcategory" da lista: [${subcategoriesForPrompt}].` }
                     ]
                 },
@@ -175,7 +173,6 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, on
 
             const parsedData = JSON.parse(response.text);
 
-            // 4. Atualiza o formulário com os dados da IA
             setFormData(prev => ({
                 ...prev,
                 name: parsedData.name || '',
@@ -191,7 +188,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, on
     } finally {
        setIsAnalyzing(false);
        if (e.target) {
-         e.target.value = ''; // Reseta o input para poder selecionar os mesmos arquivos novamente
+         e.target.value = '';
        }
     }
   };
