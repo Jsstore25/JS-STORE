@@ -74,16 +74,36 @@ useEffect(() => {
     window.location.hash = '#/';
   };
 
-  const handleAddProduct = async (newProduct: Omit<Product, 'id'>) => {
-    try {
-      const { data, error } = await supabase.from<Product>('produtos').insert([newProduct]);
-      if (error) throw error;
+ const handleAddProduct = async (newProduct: Omit<Product, 'id'>) => {
+  try {
+    // Gera um UUID manualmente, caso queira setar no frontend
+    // Mas se o Supabase já gera automaticamente, podemos omitir
+    const productToInsert = {
+      ...newProduct
+      // id: crypto.randomUUID() // opcional, se você quiser gerar no frontend
+    };
+
+    const { data, error } = await supabase
+      .from<Product>('produtos')
+      .insert([productToInsert])
+      .select(); // Importante: retorna a linha inserida
+
+    if (error) throw error;
+
+    if (data && data.length > 0) {
+      // Atualiza o estado local para refletir o produto adicionado
       setProducts(prev => [...prev, data[0]]);
-    } catch (err: any) {
-      console.error(err);
-      alert('Erro: ' + (err.message || 'Erro ao adicionar produto.'));
+      console.log('Produto adicionado:', data[0]);
+    } else {
+      console.warn('Produto não foi inserido corretamente.');
     }
-  };
+
+  } catch (err: any) {
+    console.error('Erro ao adicionar produto:', err.message);
+    alert('Erro: ' + (err.message || 'Erro ao adicionar produto.'));
+  }
+};
+
 
   const handleUpdateProduct = async (updatedProduct: Product) => {
     try {
