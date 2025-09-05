@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { Product } from '../types';
-import { LOGO_BASE64 } from '../constants';
+import { LOGO_BASE64, INITIAL_PRODUCTS } from '../constants';
 import ProductFormModal from '../components/ProductFormModal';
 import { PlusIcon, UploadIcon, DownloadIcon } from '../components/Icons';
 
@@ -30,6 +30,9 @@ const AdminPage: React.FC<AdminPageProps> = ({ products, onLogout, onAddProduct,
   const [importSuccess, setImportSuccess] = useState('');
   const [importError, setImportError] = useState('');
 
+  const [showRestorePrompt, setShowRestorePrompt] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(false);
+
   useEffect(() => {
     const savedShippingCost = localStorage.getItem('standardShippingCost');
     if (savedShippingCost) {
@@ -37,6 +40,64 @@ const AdminPage: React.FC<AdminPageProps> = ({ products, onLogout, onAddProduct,
       setShippingCost(formatted);
     }
   }, []);
+
+  // Efeito para backup automático e detecção de reset do servidor.
+  useEffect(() => {
+    const isServerStateInitial = JSON.stringify(products) === JSON.stringify(INITIAL_PRODUCTS);
+    const backupRaw = localStorage.getItem('products_backup');
+
+    // 1. Detectar se o servidor foi resetado e se existe um backup melhor para restaurar.
+    if (isServerStateInitial && backupRaw) {
+      const isBackupStateInitial = backupRaw === JSON.stringify(INITIAL_PRODUCTS);
+      if (!isBackupStateInitial) {
+        setShowRestorePrompt(true);
+      }
+    }
+
+    // 2. Salvar backup no localStorage, evitando sobreescrever um backup bom com o estado inicial.
+    if (!isServerStateInitial || !backupRaw) {
+      localStorage.setItem('products_backup', JSON.stringify(products));
+    }
+  }, [products]);
+
+  const handleRestoreBackup = async () => {
+    setIsRestoring(true);
+    setImportError('');
+    setImportSuccess('');
+    const backup = localStorage.getItem('products_backup');
+
+    if (!backup) {
+      setImportError('Nenhum backup local encontrado.');
+      setIsRestoring(false);
+      return;
+    }
+
+    try {
+      const importedProducts = JSON.parse(backup);
+      const response = await fetch('/api/products/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(importedProducts),
+      });
+
+      if (!response.ok) {
+        throw new Error('Falha ao enviar dados de backup para o servidor.');
+      }
+      
+      setImportSuccess('Backup restaurado com sucesso! A lista de produtos foi atualizada.');
+      setShowRestorePrompt(false);
+      onRefreshProducts();
+      setTimeout(() => setImportSuccess(''), 4000);
+
+    } catch (error) {
+      console.error(error);
+      const message = (error as Error).message || 'Ocorreu um erro desconhecido.';
+      setImportError(`Erro ao restaurar: ${message}`);
+      setTimeout(() => setImportError(''), 4000);
+    } finally {
+      setIsRestoring(false);
+    }
+  };
 
   const handleOpenAddModal = () => {
     setEditingProduct(null);
@@ -205,6 +266,27 @@ const AdminPage: React.FC<AdminPageProps> = ({ products, onLogout, onAddProduct,
         </div>
       </header>
       <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        {showRestorePrompt && (
+            <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6 rounded-md shadow-lg" role="alert">
+            <div className="flex">
+                <div className="py-1"><svg className="fill-current h-6 w-6 text-yellow-500 mr-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M2.93 17.07A10 10 0 1 1 17.07 2.93 10 10 0 0 1 2.93 17.07zM9 5v6h2V5H9zm0 8v2h2v-2H9z"/></svg></div>
+                <div>
+                <p className="font-bold">Dados do servidor parecem ter sido reiniciados!</p>
+                <p className="text-sm">Encontramos um backup local dos seus produtos. Deseja restaurá-lo?</p>
+                <div className="mt-3">
+                    <button 
+                    onClick={handleRestoreBackup}
+                    disabled={isRestoring}
+                    className="bg-yellow-500 text-white font-bold py-1 px-3 rounded text-sm hover:bg-yellow-600 disabled:bg-yellow-300"
+                    >
+                    {isRestoring ? 'Restaurando...' : 'Sim, restaurar backup'}
+                    </button>
+                    <button onClick={() => setShowRestorePrompt(false)} className="ml-4 text-sm font-semibold text-yellow-800 hover:underline">Ignorar</button>
+                </div>
+                </div>
+            </div>
+            </div>
+        )}
         <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold">Gerenciar Produtos</h2>
             <button onClick={handleOpenAddModal} className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 flex items-center gap-2">
