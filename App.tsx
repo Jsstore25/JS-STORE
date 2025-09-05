@@ -14,6 +14,22 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [currentPath, setCurrentPath] = useState(window.location.hash || '#/');
 
+// ✅ Teste rápido da conexão com Supabase
+useEffect(() => {
+  const testSupabase = async () => {
+    try {
+      const { data, error } = await supabase.from('produtos').select('*').limit(1);
+      if (error) throw error;
+      console.log('Supabase OK:', data);
+    } catch (err: any) {
+      console.error('Erro Supabase:', err.message);
+    }
+  };
+
+  testSupabase();
+}, []);
+
+
   // Carrega produtos do Supabase
   const fetchProducts = useCallback(async () => {
     setLoading(true);
