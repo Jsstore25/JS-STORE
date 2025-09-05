@@ -62,23 +62,12 @@ export default async function handler(req: any, res: any) {
 
     // Remove a query string e divide a URL em segmentos para um roteamento robusto.
     const pathSegments = url.split('?')[0].split('/').filter(Boolean);
+    
+    // Devido à reescrita de URL em vercel.json, tanto a adição de um produto
+    // quanto a importação chegam a esta função pelo mesmo caminho.
+    // Portanto, a lógica de roteamento é baseada no método e no corpo da requisição.
 
-    // Rota: /api/products/import
-    if (pathSegments[0] === 'api' && pathSegments[1] === 'products' && pathSegments[2] === 'import' && pathSegments.length === 3) {
-      if (method === 'POST') {
-        const importedProducts = body;
-        if (!Array.isArray(importedProducts)) {
-          return res.status(400).json({ error: 'O corpo da requisição deve ser um array de produtos.' });
-        }
-        products = importedProducts; // Substitui a lista de produtos em memória.
-        return res.status(200).json({ message: 'Produtos importados com sucesso.' });
-      } else {
-        res.setHeader('Allow', ['POST']);
-        return res.status(405).end(`Método ${method} não permitido para a rota de importação.`);
-      }
-    }
-
-    // Rota: /api/products (e com query params)
+    // Rota: /api/products
     if (pathSegments[0] === 'api' && pathSegments[1] === 'products' && pathSegments.length === 2) {
       const idParam = query.id as string;
 
@@ -87,14 +76,25 @@ export default async function handler(req: any, res: any) {
           return res.status(200).json(products);
 
         case 'POST': {
-          const newProductData = body;
-          const newProduct: Product = {
-            ...newProductData,
-            id: Date.now(),
-            reviews: newProductData.reviews || [],
-          };
-          products.push(newProduct);
-          return res.status(201).json(newProduct);
+          // Diferencia a importação (array) da adição de produto (objeto)
+          if (Array.isArray(body)) {
+            const importedProducts = body;
+            // Validação simples
+            if (!Array.isArray(importedProducts)) {
+              return res.status(400).json({ error: 'O corpo da requisição deve ser um array de produtos.' });
+            }
+            products = importedProducts; // Substitui a lista de produtos em memória.
+            return res.status(200).json({ message: 'Produtos importados com sucesso.' });
+          } else {
+            const newProductData = body;
+            const newProduct: Product = {
+              ...newProductData,
+              id: Date.now(),
+              reviews: newProductData.reviews || [],
+            };
+            products.push(newProduct);
+            return res.status(201).json(newProduct);
+          }
         }
 
         case 'PUT': {
