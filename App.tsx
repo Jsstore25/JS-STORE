@@ -14,21 +14,20 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [currentPath, setCurrentPath] = useState(window.location.hash || '#/');
 
-// ✅ Teste rápido da conexão com Supabase
-useEffect(() => {
-  const testSupabase = async () => {
-    try {
-      const { data, error } = await supabase.from('produtos').select('*').limit(1);
-      if (error) throw error;
-      console.log('Supabase OK:', data);
-    } catch (err: any) {
-      console.error('Erro Supabase:', err.message);
-    }
-  };
+  // ✅ Teste rápido da conexão com Supabase
+  useEffect(() => {
+    const testSupabase = async () => {
+      try {
+        const { data, error } = await supabase.from('produtos').select('*').limit(1);
+        if (error) throw error;
+        console.log('Supabase OK:', data);
+      } catch (err: any) {
+        console.error('Erro Supabase:', err.message);
+      }
+    };
 
-  testSupabase();
-}, []);
-
+    testSupabase();
+  }, []);
 
   // Carrega produtos do Supabase
   const fetchProducts = useCallback(async () => {
@@ -74,43 +73,36 @@ useEffect(() => {
     window.location.hash = '#/';
   };
 
- const handleAddProduct = async (newProduct: Omit<Product, 'id'>) => {
-  try {
-    // Gera um UUID manualmente, caso queira setar no frontend
-    // Mas se o Supabase já gera automaticamente, podemos omitir
-    const productToInsert = {
-      ...newProduct
-      // id: crypto.randomUUID() // opcional, se você quiser gerar no frontend
-    };
+  const handleAddProduct = async (newProduct: Omit<Product, 'id'>) => {
+    try {
+      const productToInsert = { ...newProduct };
 
-    const { data, error } = await supabase
-      .from<Product>('produtos')
-      .insert([productToInsert])
-      .select(); // Importante: retorna a linha inserida
+      const { data, error } = await supabase
+        .from<Product>('produtos')
+        .insert([productToInsert])
+        .select(); // Importante: retorna a linha inserida
 
-    if (error) throw error;
+      if (error) throw error;
 
-    if (data && data.length > 0) {
-      // Atualiza o estado local para refletir o produto adicionado
-      setProducts(prev => [...prev, data[0]]);
-      console.log('Produto adicionado:', data[0]);
-    } else {
-      console.warn('Produto não foi inserido corretamente.');
+      if (data && data.length > 0) {
+        setProducts(prev => [...prev, data[0]]);
+        console.log('Produto adicionado:', data[0]);
+      } else {
+        console.warn('Produto não foi inserido corretamente.');
+      }
+    } catch (err: any) {
+      console.error('Erro ao adicionar produto:', err.message);
+      alert('Erro: ' + (err.message || 'Erro ao adicionar produto.'));
     }
-
-  } catch (err: any) {
-    console.error('Erro ao adicionar produto:', err.message);
-    alert('Erro: ' + (err.message || 'Erro ao adicionar produto.'));
-  }
-};
-
+  };
 
   const handleUpdateProduct = async (updatedProduct: Product) => {
     try {
       const { data, error } = await supabase
         .from<Product>('produtos')
         .update(updatedProduct)
-        .eq('id', updatedProduct.id);
+        .eq('id', updatedProduct.id)
+        .select();
       if (error) throw error;
       setProducts(prev => prev.map(p => (p.id === updatedProduct.id ? data[0] : p)));
     } catch (err: any) {
@@ -130,20 +122,44 @@ useEffect(() => {
     }
   };
 
-  const handleAddReview = (productId: string, reviewData: Omit<Review, 'id' | 'date'>) => {
-    const productToUpdate = products.find(p => p.id === productId);
-    if (!productToUpdate) return;
+  const handleAddReview = async (
+    productId: string,
+    reviewData: Omit<Review, 'id' | 'date'>
+  ) => {
+    try {
+      const productToUpdate = products.find(p => p.id === productId);
+      if (!productToUpdate) return;
 
-    const newReview: Review = {
-      ...reviewData,
-      id: Date.now().toString(),
-      date: new Date().toISOString(),
-    };
+      const newReview: Review = {
+        ...reviewData,
+        id: Date.now().toString(),
+        date: new Date().toISOString(),
+      };
 
-    const updatedReviews = productToUpdate.reviews ? [...productToUpdate.reviews, newReview] : [newReview];
-    const updatedProduct = { ...productToUpdate, reviews: updatedReviews };
+      const updatedReviews = productToUpdate.reviews
+        ? [...productToUpdate.reviews, newReview]
+        : [newReview];
 
-    handleUpdateProduct(updatedProduct);
+      const { data, error } = await supabase
+        .from<Product>('produtos')
+        .update({ reviews: updatedReviews })
+        .eq('id', productId)
+        .select();
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        setProducts(prev =>
+          prev.map(p => (p.id === productId ? data[0] : p))
+        );
+        console.log('Review adicionado:', newReview);
+      } else {
+        console.warn('Review não foi inserido corretamente.');
+      }
+    } catch (err: any) {
+      console.error('Erro ao adicionar review:', err.message);
+      alert('Erro: ' + (err.message || 'Erro ao adicionar review.'));
+    }
   };
 
   if (loading) {
