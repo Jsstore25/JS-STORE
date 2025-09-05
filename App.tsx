@@ -14,7 +14,7 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [currentPath, setCurrentPath] = useState(window.location.hash || '#/');
 
-  // ✅ Teste rápido da conexão com Supabase
+  // Teste rápido da conexão com Supabase
   useEffect(() => {
     const testSupabase = async () => {
       try {
@@ -25,7 +25,6 @@ const App: React.FC = () => {
         console.error('Erro Supabase:', err.message);
       }
     };
-
     testSupabase();
   }, []);
 
@@ -61,6 +60,7 @@ const App: React.FC = () => {
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
+  // Login / Logout
   const handleLogin = () => {
     sessionStorage.setItem('isAdmin', 'true');
     setIsAdmin(true);
@@ -73,14 +73,14 @@ const App: React.FC = () => {
     window.location.hash = '#/';
   };
 
+  // CRUD Produtos
   const handleAddProduct = async (newProduct: Omit<Product, 'id'>) => {
     try {
       const productToInsert = { ...newProduct };
-
       const { data, error } = await supabase
         .from<Product>('produtos')
         .insert([productToInsert])
-        .select(); // Importante: retorna a linha inserida
+        .select();
 
       if (error) throw error;
 
@@ -97,35 +97,43 @@ const App: React.FC = () => {
   };
 
   const handleUpdateProduct = async (updatedProduct: Product) => {
+    if (!updatedProduct?.id) return;
     try {
       const { data, error } = await supabase
         .from<Product>('produtos')
         .update(updatedProduct)
         .eq('id', updatedProduct.id)
         .select();
+
       if (error) throw error;
-      setProducts(prev => prev.map(p => (p.id === updatedProduct.id ? data[0] : p)));
+
+      if (data && data.length > 0) {
+        setProducts(prev => prev.map(p => (p.id === updatedProduct.id ? data[0] : p)));
+      } else {
+        console.warn('Produto não foi atualizado corretamente.');
+      }
     } catch (err: any) {
-      console.error(err);
+      console.error('Erro ao atualizar produto:', err.message);
       alert('Erro: ' + (err.message || 'Erro ao atualizar produto.'));
     }
   };
 
   const handleDeleteProduct = async (productId: string) => {
+    if (!productId) return;
     try {
       const { error } = await supabase.from('produtos').delete().eq('id', productId);
       if (error) throw error;
       setProducts(prev => prev.filter(p => p.id !== productId));
     } catch (err: any) {
-      console.error(err);
+      console.error('Erro ao deletar produto:', err.message);
       alert('Erro: ' + (err.message || 'Erro ao deletar produto.'));
     }
   };
 
-  const handleAddReview = async (
-    productId: string,
-    reviewData: Omit<Review, 'id' | 'date'>
-  ) => {
+  // Avaliações
+  const handleAddReview = async (productId: string, reviewData: Omit<Review, 'id' | 'date'>) => {
+    if (!productId || !reviewData) return;
+
     try {
       const productToUpdate = products.find(p => p.id === productId);
       if (!productToUpdate) return;
@@ -149,9 +157,7 @@ const App: React.FC = () => {
       if (error) throw error;
 
       if (data && data.length > 0) {
-        setProducts(prev =>
-          prev.map(p => (p.id === productId ? data[0] : p))
-        );
+        setProducts(prev => prev.map(p => (p.id === productId ? data[0] : p)));
         console.log('Review adicionado:', newReview);
       } else {
         console.warn('Review não foi inserido corretamente.');
@@ -162,6 +168,7 @@ const App: React.FC = () => {
     }
   };
 
+  // Renders
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">
@@ -187,11 +194,12 @@ const App: React.FC = () => {
     );
   }
 
+  // Proteção contra undefined props
   if (currentPath.startsWith('#/admin')) {
     if (isAdmin) {
       return (
         <AdminPage
-          products={products}
+          products={products || []}
           onLogout={handleLogout}
           onAddProduct={handleAddProduct}
           onUpdateProduct={handleUpdateProduct}
@@ -204,7 +212,7 @@ const App: React.FC = () => {
     }
   }
 
-  return <StorePage products={products} onAddReview={handleAddReview} />;
+  return <StorePage products={products || []} onAddReview={handleAddReview} />;
 };
 
 export default App;
