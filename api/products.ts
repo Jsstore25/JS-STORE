@@ -123,9 +123,28 @@ export default async function handler(req: any, res: any) {
     
     return res.status(404).json({ message: 'Rota não encontrada.' });
 
-  } catch (error: any) {
-    console.error('Erro na API com Fetch para Supabase:', error.message);
-    const detailedMessage = `Falha na comunicação com o Supabase. Verifique se as chaves (URL/KEY) estão corretas e se as políticas de RLS (Row Level Security) da sua tabela 'produtos' permitem leitura anônima. Erro original: ${error.message}`;
+  } catch (error: unknown) {
+    let originalErrorMessage = 'Erro desconhecido.';
+    if (error instanceof Error) {
+        originalErrorMessage = error.message;
+    } else if (typeof error === 'string') {
+        originalErrorMessage = error;
+    }
+
+    console.error('Erro na API com Fetch para Supabase:', originalErrorMessage);
+    
+    let hint = "Verifique se as chaves (URL/KEY) do Supabase estão corretas e se as políticas de RLS (Row Level Security) da sua tabela 'produtos' permitem leitura anônima.";
+    try {
+        const supabaseError = JSON.parse(originalErrorMessage);
+        if (supabaseError.message) {
+            hint += `\n\nDetalhe do Supabase: ${supabaseError.message}`;
+        }
+    } catch (e) {
+        // Não era um erro JSON do Supabase.
+    }
+
+    const detailedMessage = `Falha na comunicação com o Supabase. ${hint}\n\nErro original completo: ${originalErrorMessage}`;
+    
     return res.status(500).json({ message: detailedMessage });
   }
 }

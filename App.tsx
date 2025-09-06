@@ -23,16 +23,19 @@ const App: React.FC = () => {
       const response = await fetch('/api/products');
       if (!response.ok) {
         const responseBody = await response.text();
-        let errorMessage;
+        let finalErrorMessage = `A API retornou um erro ${response.status} (${response.statusText}).\n\n`;
+        
         try {
-          // Tenta extrair a mensagem específica do JSON retornado pela API
-          const parsedBody = JSON.parse(responseBody);
-          errorMessage = parsedBody.message || `Erro do Servidor (Status ${response.status}): ${responseBody}`;
+          const parsedError = JSON.parse(responseBody);
+          if (parsedError.message) {
+            finalErrorMessage += `MENSAGEM DO SERVIDOR:\n${parsedError.message}`;
+          } else {
+            finalErrorMessage += `RESPOSTA JSON DO SERVIDOR (sem 'message'):\n${JSON.stringify(parsedError, null, 2)}`;
+          }
         } catch (e) {
-          // Se não for JSON, o corpo da resposta já é a mensagem de erro (pode ser HTML do Vercel)
-          errorMessage = `Erro do Servidor (Status ${response.status}). Resposta recebida:\n${responseBody}`;
+            finalErrorMessage += `A RESPOSTA DO SERVIDOR NÃO ERA JSON.\nResposta bruta (pode ser HTML de erro do Vercel):\n\n${responseBody}`;
         }
-        throw new Error(errorMessage);
+        throw new Error(finalErrorMessage);
       }
       const data: Product[] = await response.json();
       setProducts(data);
