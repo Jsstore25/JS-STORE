@@ -110,12 +110,12 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product, onClos
   };
 
   const goToPrev = () => {
-    const newIndex = currentImageIndex > 0 ? currentImageIndex - 1 : product.imageUrls.length - 1;
+    const newIndex = currentImageIndex > 0 ? currentImageIndex - 1 : product.imageurls.length - 1;
     scrollToImage(newIndex);
   };
   
   const goToNext = () => {
-    const newIndex = currentImageIndex < product.imageUrls.length - 1 ? currentImageIndex + 1 : 0;
+    const newIndex = currentImageIndex < product.imageurls.length - 1 ? currentImageIndex + 1 : 0;
     scrollToImage(newIndex);
   };
 
@@ -145,7 +145,7 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product, onClos
             onScroll={handleScroll}
             className="w-full h-64 md:h-full flex overflow-x-auto snap-x snap-mandatory scroll-smooth"
           >
-            {product.imageUrls.map((url, index) => (
+            {product.imageurls.map((url, index) => (
                 <img
                     key={index}
                     src={url}
@@ -156,7 +156,7 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product, onClos
             ))}
           </div>
 
-          {product.imageUrls.length > 1 && (
+          {product.imageurls.length > 1 && (
             <>
                 <button
                     onClick={goToPrev}
@@ -173,7 +173,7 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product, onClos
                     <ChevronRightIcon/>
                 </button>
                 <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2">
-                    {product.imageUrls.map((_, index) => (
+                    {product.imageurls.map((_, index) => (
                         <button
                             key={index}
                             onClick={() => scrollToImage(index)}

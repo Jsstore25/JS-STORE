@@ -10,7 +10,7 @@ export interface Product {
   id: number;
   name: string;
   price: string;
-  imageUrls: string[];
+  imageurls: string[];
   category: 'Feminino' | 'Masculino';
   subcategory: string;
   description?: string;

@@ -16,7 +16,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     id: 1, 
     name: "Slip On (1ª linha)", 
     price: "R$ 100,00", 
-    imageUrls: ["https://images.unsplash.com/photo-1605348532760-6753d2c43329?auto=format&fit=crop&w=800&q=80"], 
+    imageurls: ["https://images.unsplash.com/photo-1605348532760-6753d2c43329?auto=format&fit=crop&w=800&q=80"], 
     category: "Feminino", 
     subcategory: "Calçados", 
     description: "Tênis slip on super confortável e estiloso, com design moderno e prático para o dia a dia. Tamanhos disponíveis do 34 ao 39.",

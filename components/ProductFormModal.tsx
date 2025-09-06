@@ -60,7 +60,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, on
   const [formData, setFormData] = useState({
     name: '',
     price: '',
-    imageUrls: [] as string[],
+    imageurls: [] as string[],
     category: 'Feminino' as 'Feminino' | 'Masculino',
     subcategory: '',
     description: '',
@@ -74,7 +74,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, on
       setFormData({
         name: product.name,
         price: product.price,
-        imageUrls: product.imageUrls,
+        imageurls: product.imageurls,
         category: product.category,
         subcategory: product.subcategory,
         description: product.description || '',
@@ -85,7 +85,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, on
       setFormData({
         name: '',
         price: '',
-        imageUrls: [],
+        imageurls: [],
         category: defaultCategory,
         subcategory: defaultSubcategory,
         description: '',
@@ -136,7 +136,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, on
         
         setFormData(prev => ({
             ...prev,
-            imageUrls: [...prev.imageUrls, ...resizedImages]
+            imageurls: [...prev.imageurls, ...resizedImages]
         }));
 
         if (shouldRunAi && resizedImages.length > 0) {
@@ -197,7 +197,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, on
   const handleRemoveImage = (index: number) => {
     setFormData(prev => ({
         ...prev,
-        imageUrls: prev.imageUrls.filter((_, i) => i !== index)
+        imageurls: prev.imageurls.filter((_, i) => i !== index)
     }));
   };
 
@@ -210,7 +210,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, on
     }
     setPriceError('');
     
-    if (formData.imageUrls.length === 0) {
+    if (formData.imageurls.length === 0) {
       setImageError('Por favor, adicione pelo menos uma imagem para o produto.');
       return;
     }
@@ -282,7 +282,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, on
           <div>
             <label className="block text-sm font-medium text-gray-700">Imagens do Produto</label>
              <div className="mt-2 grid grid-cols-3 sm:grid-cols-4 gap-4">
-                {formData.imageUrls.map((url, index) => (
+                {formData.imageurls.map((url, index) => (
                     <div key={index} className="relative group">
                         <img src={url} alt={`Preview ${index + 1}`} className="w-full h-24 object-cover rounded-md border" />
                         <button 
