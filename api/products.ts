@@ -1,4 +1,3 @@
-import { supabase } from '../lib/supabaseClient';
 
 // Mantemos os tipos aqui para evitar problemas de importação no ambiente serverless.
 export interface Review {
@@ -20,8 +19,22 @@ export interface Product {
   reviews?: Review[];
 }
 
+const supabaseUrl = process.env.VITE_SUPABASE_URL!;
+const supabaseAnonKey = process.env.VITE_SUPABASE_KEY!;
+
+const baseHeaders = {
+  'apikey': supabaseAnonKey,
+  'Authorization': `Bearer ${supabaseAnonKey}`,
+  'Content-Type': 'application/json',
+};
+
 // Este manipulador usa a sintaxe do Vercel Node.js runtime (req, res).
 export default async function handler(req: any, res: any) {
+  if (!supabaseUrl || !supabaseAnonKey) {
+    console.error('As variáveis de ambiente do Supabase não estão configuradas.');
+    return res.status(500).json({ error: 'Configuração do servidor incompleta.' });
+  }
+
   try {
     const { url, method, query, body } = req;
     const pathSegments = url.split('?')[0].split('/').filter(Boolean);
@@ -31,71 +44,74 @@ export default async function handler(req: any, res: any) {
 
       switch (method) {
         case 'GET': {
-          const { data, error } = await supabase
-            .from('produtos')
-            .select('*')
-            .order('id', { ascending: true });
-
-          if (error) throw error;
+          const fetchRes = await fetch(`${supabaseUrl}/rest/v1/produtos?select=*&order=id.asc`, { headers: baseHeaders });
+          if (!fetchRes.ok) throw new Error(await fetchRes.text());
+          const data = await fetchRes.json();
           return res.status(200).json(data);
         }
 
         case 'POST': {
           if (Array.isArray(body)) {
-            // ATENÇÃO: Esta operação é destrutiva. Ela apaga todos os produtos existentes antes de importar os novos.
-            const { error: deleteError } = await supabase.from('produtos').delete().neq('id', 0);
-            if (deleteError) throw deleteError;
-
-            // Remove o ID do cliente, pois o Supabase irá gerá-lo
-            const productsToInsert = body.map(({ id, ...rest }) => rest);
-            const { error: insertError } = await supabase.from('produtos').insert(productsToInsert);
-            if (insertError) throw insertError;
+            // Importação em massa: apaga os antigos e insere os novos
+            const deleteRes = await fetch(`${supabaseUrl}/rest/v1/produtos?id=not.is.null`, { 
+                method: 'DELETE', 
+                headers: baseHeaders 
+            });
+            if (!deleteRes.ok) throw new Error(`Falha ao limpar produtos: ${await deleteRes.text()}`);
+            
+            if (body.length > 0) {
+              const productsToInsert = body.map(({ id, ...rest }) => rest);
+              const insertRes = await fetch(`${supabaseUrl}/rest/v1/produtos`, {
+                method: 'POST',
+                headers: { ...baseHeaders, 'Prefer': 'return=minimal' },
+                body: JSON.stringify(productsToInsert),
+              });
+              if (!insertRes.ok) throw new Error(`Falha ao inserir produtos: ${await insertRes.text()}`);
+            }
             
             return res.status(200).json({ message: 'Produtos importados com sucesso.' });
           } else {
+            // Inserção de um único produto
             const { id, ...newProductData } = body;
-            const { data, error } = await supabase
-              .from('produtos')
-              .insert([newProductData])
-              .select()
-              .single();
+            const insertRes = await fetch(`${supabaseUrl}/rest/v1/produtos?select=*`, {
+              method: 'POST',
+              headers: baseHeaders,
+              body: JSON.stringify(newProductData),
+            });
 
-            if (error) throw error;
+            if (!insertRes.ok) throw new Error(await insertRes.text());
+            const [data] = await insertRes.json();
             return res.status(201).json(data);
           }
         }
 
         case 'PUT': {
-          if (!idParam) {
-            return res.status(400).json({ error: 'O ID do produto é obrigatório.' });
-          }
+          if (!idParam) return res.status(400).json({ error: 'O ID do produto é obrigatório.' });
           const id = parseInt(idParam, 10);
           const { id: bodyId, ...updatedProductData } = body;
 
-          const { data, error } = await supabase
-            .from('produtos')
-            .update(updatedProductData)
-            .eq('id', id)
-            .select()
-            .single();
+          const updateRes = await fetch(`${supabaseUrl}/rest/v1/produtos?id=eq.${id}&select=*`, {
+            method: 'PATCH', // O método de atualização do Supabase REST é PATCH
+            headers: baseHeaders,
+            body: JSON.stringify(updatedProductData),
+          });
 
-          if (error) throw error;
+          if (!updateRes.ok) throw new Error(await updateRes.text());
+          const [data] = await updateRes.json();
           if (!data) return res.status(404).json({ error: 'Produto não encontrado.' });
           return res.status(200).json(data);
         }
             
         case 'DELETE': {
-          if (!idParam) {
-            return res.status(400).json({ error: 'O ID do produto é obrigatório.' });
-          }
+          if (!idParam) return res.status(400).json({ error: 'O ID do produto é obrigatório.' });
           const id = parseInt(idParam, 10);
           
-          const { error } = await supabase
-            .from('produtos')
-            .delete()
-            .eq('id', id);
+          const deleteRes = await fetch(`${supabaseUrl}/rest/v1/produtos?id=eq.${id}`, {
+            method: 'DELETE',
+            headers: baseHeaders,
+          });
 
-          if (error) throw error;
+          if (!deleteRes.ok) throw new Error(await deleteRes.text());
           return res.status(204).send(null);
         }
 
@@ -108,7 +124,7 @@ export default async function handler(req: any, res: any) {
     return res.status(404).json({ error: 'Rota não encontrada.' });
 
   } catch (error: any) {
-    console.error('Erro na API Supabase:', error);
+    console.error('Erro na API com Fetch para Supabase:', error.message);
     return res.status(500).json({ error: 'Erro Interno do Servidor', message: error.message });
   }
 }
