@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { supabase } from "../supabaseClient";
 
 interface Product {
@@ -11,14 +11,24 @@ interface Product {
   description?: string;
 }
 
-interface AdminPageProps {
-  products: Product[];
-  onRefreshProducts: () => void;
-}
-
-const AdminPage: React.FC<AdminPageProps> = ({ products, onRefreshProducts }) => {
+const AdminPage: React.FC = () => {
+  const [products, setProducts] = useState<Product[]>([]);
   const [importError, setImportError] = useState("");
   const [importSuccess, setImportSuccess] = useState("");
+
+  // 🔹 useEffect para carregar produtos do Supabase ao abrir a página
+  useEffect(() => {
+    const fetchProducts = async () => {
+      const { data, error } = await supabase.from("produtos").select("*");
+      if (error) {
+        console.error("Erro ao buscar produtos:", error.message);
+      } else {
+        setProducts(data || []);
+      }
+    };
+
+    fetchProducts();
+  }, []);
 
   // 🔹 Importar JSON direto no Supabase
   const handleImportChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -47,7 +57,7 @@ const AdminPage: React.FC<AdminPageProps> = ({ products, onRefreshProducts }) =>
       const { data, error } = await supabase.from("produtos").insert(cleaned).select();
       if (error) throw error;
 
-      onRefreshProducts();
+      setProducts(data || []);
       setImportSuccess(`${data?.length || 0} produtos importados com sucesso!`);
       setTimeout(() => setImportSuccess(""), 4000);
     } catch (err: any) {
@@ -78,10 +88,7 @@ const AdminPage: React.FC<AdminPageProps> = ({ products, onRefreshProducts }) =>
       <h2 className="text-xl font-semibold mt-6 mb-2">Produtos atuais:</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {products.map((p) => (
-          <div
-            key={p.id}
-            className="border rounded-lg shadow-sm p-3 bg-white"
-          >
+          <div key={p.id} className="border rounded-lg shadow-sm p-3 bg-white">
             <img
               src={p.imageUrls?.[0]}
               alt={p.name}
