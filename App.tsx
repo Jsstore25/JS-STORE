@@ -104,8 +104,7 @@ const App: React.FC = () => {
         const errorMessage = await handleApiError('adicionar o produto', response);
         throw new Error(errorMessage);
       }
-      const addedProduct: Product = await response.json();
-      setProducts(prev => [...prev, addedProduct]);
+      await fetchProducts(); // Recarrega a lista de produtos do servidor
     } catch (err) {
       console.error(err);
       alert('Erro: ' + (err as Error).message);
@@ -123,8 +122,7 @@ const App: React.FC = () => {
         const errorMessage = await handleApiError('atualizar o produto', response);
         throw new Error(errorMessage);
       }
-      const returnedProduct: Product = await response.json();
-      setProducts(prev => prev.map(p => p.id === returnedProduct.id ? returnedProduct : p));
+      await fetchProducts(); // Recarrega a lista de produtos do servidor
     } catch (err) {
       console.error(err);
       alert('Erro: ' + (err as Error).message);

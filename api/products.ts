@@ -76,15 +76,16 @@ export default async function handler(req: any, res: any) {
           } else {
             // Inserção de um único produto
             const { id, ...newProductData } = body;
-            const insertRes = await fetch(`${supabaseUrl}/rest/v1/produtos?select=*`, {
+            const insertRes = await fetch(`${supabaseUrl}/rest/v1/produtos`, {
               method: 'POST',
-              headers: { ...baseHeaders, 'Prefer': 'representation' },
+              headers: { ...baseHeaders, 'Prefer': 'return=minimal' },
               body: JSON.stringify(newProductData),
             });
 
             if (!insertRes.ok) throw new Error(await insertRes.text());
-            const [data] = await insertRes.json();
-            return res.status(201).json(data);
+             // Retorna um status 201 Created (sem corpo) em caso de sucesso,
+            // que o cliente irá usar como sinal para recarregar os dados.
+            return res.status(201).json({ success: true });
           }
         }
 
@@ -93,16 +94,15 @@ export default async function handler(req: any, res: any) {
           const id = parseInt(idParam, 10);
           const { id: bodyId, ...updatedProductData } = body;
 
-          const updateRes = await fetch(`${supabaseUrl}/rest/v1/produtos?id=eq.${id}&select=*`, {
+          const updateRes = await fetch(`${supabaseUrl}/rest/v1/produtos?id=eq.${id}`, {
             method: 'PATCH', // O método de atualização do Supabase REST é PATCH
-            headers: { ...baseHeaders, 'Prefer': 'representation' },
+            headers: { ...baseHeaders, 'Prefer': 'return=minimal' },
             body: JSON.stringify(updatedProductData),
           });
 
           if (!updateRes.ok) throw new Error(await updateRes.text());
-          const [data] = await updateRes.json();
-          if (!data) return res.status(404).json({ message: 'Produto não encontrado.' });
-          return res.status(200).json(data);
+          // Retornamos um status 200 OK para o cliente para sinalizar sucesso.
+          return res.status(200).json({ success: true });
         }
             
         case 'DELETE': {
