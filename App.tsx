@@ -3,6 +3,7 @@ import LoginPage from './pages/LoginPage';
 import AdminPage from './pages/AdminPage';
 import StorePage from './pages/StorePage';
 import { supabase } from './supabaseClient';
+import { Header } from './components/Header';
 
 const App: React.FC = () => {
   const [isAdmin, setIsAdmin] = useState(() => sessionStorage.getItem('isAdmin') === 'true');
@@ -13,12 +14,14 @@ const App: React.FC = () => {
 
   const fetchProducts = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
       const { data, error } = await supabase.from('produtos').select('*');
       if (error) throw error;
       setProducts(data ?? []);
     } catch (err: any) {
-      setError(err.message || 'Erro desconhecido');
+      setError(err.message || 'Ocorreu um erro desconhecido.');
+      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -49,11 +52,22 @@ const App: React.FC = () => {
   if (loading) return <div className="min-h-screen flex items-center justify-center">Carregando...</div>;
   if (error) return <div className="min-h-screen flex items-center justify-center">Erro: {error}</div>;
 
-  if (currentPath.startsWith('#/admin')) {
-    return isAdmin ? <AdminPage products={products} onLogout={handleLogout} /> : <LoginPage onLogin={handleLogin} />;
-  }
-
-  return <StorePage products={products} />;
+  return (
+    <div className="min-h-screen flex flex-col">
+      <Header cartItemCount={0} newProductCount={0} onCartClick={()=>{}} onNotificationClick={()=>{}} />
+      <main className="flex-grow">
+        {currentPath.startsWith('#/admin') ? (
+          isAdmin ? (
+            <AdminPage />
+          ) : (
+            <LoginPage onLogin={handleLogin} />
+          )
+        ) : (
+          <StorePage products={products} />
+        )}
+      </main>
+    </div>
+  );
 };
 
 export default App;
