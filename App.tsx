@@ -22,12 +22,20 @@ const App: React.FC = () => {
     try {
       const response = await fetch('/api/products');
       if (!response.ok) {
-        // Tenta ler o corpo da resposta de erro como JSON
-        const errorBody = await response.json().catch(() => null);
+        // Tentativa de obter a mensagem de erro detalhada do servidor.
+        const errorText = await response.text();
+        let detail = `(Status: ${response.status} ${response.statusText})`;
+        try {
+          const errorJson = JSON.parse(errorText);
+          // A nossa API retorna um campo 'message' com o erro específico.
+          detail = errorJson.message || errorJson.error || errorText;
+        } catch (e) {
+          // Se não for JSON, usamos o texto da resposta. Pode ser um erro de HTML do Vercel.
+          detail = errorText.substring(0, 300); // Limita para não poluir a tela.
+        }
         
-        // Constrói uma mensagem de erro detalhada
-        const detail = errorBody?.message || errorBody?.error || response.statusText;
-        throw new Error(`O servidor respondeu com um erro. Detalhes: ${detail}`);
+        // Mensagem de erro super explícita para o usuário.
+        throw new Error(`A comunicação com o servidor falhou. É muito provável que as variáveis de ambiente (VITE_SUPABASE_URL, VITE_SUPABASE_KEY) não estejam configuradas no Vercel. Detalhes do erro: ${detail}`);
       }
       const data: Product[] = await response.json();
       setProducts(data);
@@ -143,8 +151,8 @@ const App: React.FC = () => {
      return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 p-4 text-center">
         <img className="h-24 w-auto" src={LOGO_BASE64} alt="JS Store Logo" />
-        <h2 className="mt-6 text-2xl font-bold text-red-600">Ocorreu um Erro</h2>
-        <p className="mt-2 text-slate-600 max-w-2xl">{error}</p>
+        <h2 className="mt-6 text-2xl font-bold text-red-600">Ocorreu um Erro de Configuração</h2>
+        <p className="mt-2 text-slate-600 max-w-2xl whitespace-pre-wrap">{error}</p>
         <button onClick={fetchProducts} className="mt-6 bg-pink-500 text-white py-2 px-6 rounded-lg font-semibold hover:bg-pink-600 transition-colors">
             Tentar Novamente
         </button>
