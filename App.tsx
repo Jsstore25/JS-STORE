@@ -15,17 +15,18 @@ const App: React.FC = () => {
   const [currentPath, setCurrentPath] = useState(window.location.hash || '#/');
 
   useEffect(() => {
-    const testSupabase = async () => {
-      try {
-        const { data, error } = await supabase.from('produtos').select('*').limit(1);
-        if (error) throw error;
-        console.log('Supabase OK:', data);
-      } catch (err: any) {
-        console.error('Erro Supabase:', err.message);
-      }
-    };
-    testSupabase();
-  }, []);
+  const testeSupabase = async () => {
+    try {
+      const { data, error } = await supabase.from('produtos').select('*');
+      if (error) throw error;
+      console.log('Produtos no Supabase:', data);
+    } catch (err) {
+      console.error('Erro ao acessar Supabase:', err);
+    }
+  };
+
+  testeSupabase();
+}, []);
 
   const fetchProducts = useCallback(async () => {
     setLoading(true);
