@@ -23,7 +23,6 @@ const parsePrice = (priceStr: string): number => {
 
 interface StorePageProps {
   products: Product[];
-  // FIX: Corrected Omit to use a union type for keys to omit.
   onAddReview: (productId: number, reviewData: Omit<Review, 'id' | 'date'>) => void;
 }
 

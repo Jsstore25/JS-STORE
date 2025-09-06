@@ -161,8 +161,6 @@ const AdminPage: React.FC<AdminPageProps> = ({ products, onLogout, onAddProduct,
           throw new Error("O arquivo JSON deve conter um array de produtos.");
         }
         
-        // FIX: The backend expects product imports on the `/api/products` endpoint,
-        // differentiating between single product creation and bulk import by the request body.
         const response = await fetch('/api/products', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
