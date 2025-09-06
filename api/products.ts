@@ -30,9 +30,9 @@ const baseHeaders = {
 // Este manipulador usa a sintaxe do Vercel Node.js runtime (req, res).
 export default async function handler(req: any, res: any) {
   if (!supabaseUrl || !supabaseAnonKey) {
-    const errorMessage = 'As variáveis de ambiente (SUPABASE_URL, SUPABASE_KEY) não estão configuradas no Vercel. IMPORTANTE: Remova o prefixo "VITE_" do nome das variáveis nas configurações do seu projeto na Vercel.';
+    const errorMessage = 'As variáveis de ambiente do servidor SUPABASE_URL e/ou SUPABASE_KEY não foram encontradas no Vercel. Verifique as configurações do seu projeto e garanta que elas foram adicionadas SEM o prefixo "VITE_".';
     console.error(errorMessage);
-    return res.status(500).json({ error: 'Configuração do servidor incompleta.', message: errorMessage });
+    return res.status(500).json({ message: errorMessage });
   }
 
   try {
@@ -86,7 +86,7 @@ export default async function handler(req: any, res: any) {
         }
 
         case 'PUT': {
-          if (!idParam) return res.status(400).json({ error: 'O ID do produto é obrigatório.' });
+          if (!idParam) return res.status(400).json({ message: 'O ID do produto é obrigatório.' });
           const id = parseInt(idParam, 10);
           const { id: bodyId, ...updatedProductData } = body;
 
@@ -98,12 +98,12 @@ export default async function handler(req: any, res: any) {
 
           if (!updateRes.ok) throw new Error(await updateRes.text());
           const [data] = await updateRes.json();
-          if (!data) return res.status(404).json({ error: 'Produto não encontrado.' });
+          if (!data) return res.status(404).json({ message: 'Produto não encontrado.' });
           return res.status(200).json(data);
         }
             
         case 'DELETE': {
-          if (!idParam) return res.status(400).json({ error: 'O ID do produto é obrigatório.' });
+          if (!idParam) return res.status(400).json({ message: 'O ID do produto é obrigatório.' });
           const id = parseInt(idParam, 10);
           
           const deleteRes = await fetch(`${supabaseUrl}/rest/v1/produtos?id=eq.${id}`, {
@@ -121,10 +121,11 @@ export default async function handler(req: any, res: any) {
       }
     }
     
-    return res.status(404).json({ error: 'Rota não encontrada.' });
+    return res.status(404).json({ message: 'Rota não encontrada.' });
 
   } catch (error: any) {
     console.error('Erro na API com Fetch para Supabase:', error.message);
-    return res.status(500).json({ error: 'Erro Interno do Servidor', message: error.message });
+    const detailedMessage = `Falha na comunicação com o Supabase. Verifique se as chaves (URL/KEY) estão corretas e se as políticas de RLS (Row Level Security) da sua tabela 'produtos' permitem leitura anônima. Erro original: ${error.message}`;
+    return res.status(500).json({ message: detailedMessage });
   }
 }

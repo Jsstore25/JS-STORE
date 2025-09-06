@@ -22,32 +22,28 @@ const App: React.FC = () => {
     try {
       const response = await fetch('/api/products');
       if (!response.ok) {
-        // A resposta do servidor é a fonte da verdade para o erro.
-        // Capturamos o texto bruto, que pode ser JSON da nossa API ou HTML de um erro do Vercel.
-        const errorFromServer = await response.text();
-        let displayError = errorFromServer;
-
-        // Tentamos extrair a mensagem específica do nosso JSON de erro.
+        const responseBody = await response.text();
+        let errorMessage;
         try {
-            const parsedError = JSON.parse(errorFromServer);
-            if (parsedError.message) {
-                displayError = parsedError.message;
-            }
+          // Tenta extrair a mensagem específica do JSON retornado pela API
+          const parsedBody = JSON.parse(responseBody);
+          errorMessage = parsedBody.message || `Erro do Servidor (Status ${response.status}): ${responseBody}`;
         } catch (e) {
-            // Se não for JSON, não há problema. O texto bruto já é útil.
+          // Se não for JSON, o corpo da resposta já é a mensagem de erro (pode ser HTML do Vercel)
+          errorMessage = `Erro do Servidor (Status ${response.status}). Resposta recebida:\n${responseBody}`;
         }
-        
-        throw new Error(displayError);
+        throw new Error(errorMessage);
       }
       const data: Product[] = await response.json();
       setProducts(data);
     } catch (err: any) {
-      setError(err.message); // Exibe a mensagem de erro exata que construímos acima.
+      setError(err.message);
       console.error(err);
     } finally {
       setLoading(false);
     }
   }, []);
+
 
   useEffect(() => {
     fetchProducts();
@@ -153,8 +149,8 @@ const App: React.FC = () => {
      return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 p-4 text-center">
         <img className="h-24 w-auto" src={LOGO_BASE64} alt="JS Store Logo" />
-        <h2 className="mt-6 text-2xl font-bold text-red-600">Ocorreu um Erro de Configuração</h2>
-        <p className="mt-2 text-slate-600 max-w-2xl whitespace-pre-wrap">{error}</p>
+        <h2 className="mt-6 text-2xl font-bold text-red-600">Ocorreu um Erro</h2>
+        <p className="mt-2 text-slate-600 max-w-2xl whitespace-pre-wrap text-left bg-red-50 border border-red-200 p-4 rounded-md">{error}</p>
         <button onClick={fetchProducts} className="mt-6 bg-pink-500 text-white py-2 px-6 rounded-lg font-semibold hover:bg-pink-600 transition-colors">
             Tentar Novamente
         </button>
