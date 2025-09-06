@@ -41,6 +41,20 @@ const StorePage: React.FC<StorePageProps> = ({ products, onAddReview }) => {
   const mainContentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const isModalVisible = isCartOpen || !!selectedProduct || isFilterOpen;
+    if (isModalVisible) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    // Cleanup function to reset overflow when component unmounts
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isCartOpen, selectedProduct, isFilterOpen]);
+
+
+  useEffect(() => {
     if (products.length > 0) {
         const seenIds: number[] = JSON.parse(localStorage.getItem('seenProductIds') || '[]');
         const currentIds = products.map(p => p.id);
@@ -264,7 +278,7 @@ const StorePage: React.FC<StorePageProps> = ({ products, onAddReview }) => {
             className={`
               fixed top-0 left-0 h-full w-4/5 max-w-sm z-40 bg-white shadow-xl
               transform transition-transform duration-300 ease-in-out
-              md:sticky md:top-28 md:w-1/4 lg:w-1/5 md:h-auto md:max-w-none md:transform-none md:z-auto
+              md:sticky md:top-24 md:w-1/4 lg:w-1/5 md:h-auto md:max-w-none md:transform-none md:z-auto
               md:bg-transparent md:shadow-none
               ${isFilterOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
             `}

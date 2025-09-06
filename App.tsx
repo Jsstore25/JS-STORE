@@ -1,30 +1,31 @@
-// App.tsx
 import React, { useState, useEffect, useCallback } from 'react';
-import type { Product, Review, CartItem } from './types';
+import type { Product, Review } from './types';
 import LoginPage from './pages/LoginPage';
 import AdminPage from './pages/AdminPage';
 import StorePage from './pages/StorePage';
-import { supabase } from './supabaseClient';
-import { Header } from './components/Header';
-import { Cart } from './components/Cart';
+import { LOGO_BASE64 } from './constants';
 
 const App: React.FC = () => {
-  const [isAdmin, setIsAdmin] = useState(() => sessionStorage.getItem('isAdmin') === 'true');
+  const [isAdmin, setIsAdmin] = useState(() => {
+    return sessionStorage.getItem('isAdmin') === 'true';
+  });
+  
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
   const [currentPath, setCurrentPath] = useState(window.location.hash || '#/');
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [isCartOpen, setIsCartOpen] = useState(false);
 
-  // 🔹 Fetch produtos
   const fetchProducts = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const { data, error } = await supabase.from<Product>('produtos').select('*');
-      if (error) throw error;
-      setProducts(data ?? []);
+      const response = await fetch('/api/products');
+      if (!response.ok) {
+        throw new Error('Falha ao carregar os produtos do servidor.');
+      }
+      const data: Product[] = await response.json();
+      setProducts(data);
     } catch (err: any) {
       setError(err.message || 'Ocorreu um erro desconhecido.');
       console.error(err);
@@ -37,14 +38,20 @@ const App: React.FC = () => {
     fetchProducts();
   }, [fetchProducts]);
 
-  // 🔹 Hash routing
   useEffect(() => {
-    const handleHashChange = () => setCurrentPath(window.location.hash || '#/');
+    if (!localStorage.getItem('adminCredentials')) {
+      localStorage.setItem('adminCredentials', JSON.stringify({ username: 'samuca', password: 'admin' }));
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleHashChange = () => {
+      setCurrentPath(window.location.hash || '#/');
+    };
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
-  // 🔹 Login / Logout
   const handleLogin = () => {
     sessionStorage.setItem('isAdmin', 'true');
     setIsAdmin(true);
@@ -56,67 +63,108 @@ const App: React.FC = () => {
     setIsAdmin(false);
     window.location.hash = '#/';
   };
-
-  // 🔹 Carrinho
-  const handleAddToCart = (product: Product, quantity = 1) => {
-    setCartItems(prev => {
-      const existing = prev.find(item => item.id === product.id);
-      if (existing) {
-        return prev.map(item =>
-          item.id === product.id ? { ...item, quantity: item.quantity + quantity } : item
-        );
-      }
-      return [...prev, { ...product, quantity }];
-    });
-    setIsCartOpen(true);
+  
+  const handleAddProduct = async (newProduct: Omit<Product, 'id'>) => {
+    try {
+      const response = await fetch('/api/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newProduct),
+      });
+      if (!response.ok) throw new Error('Falha ao adicionar o produto.');
+      const addedProduct: Product = await response.json();
+      setProducts(prev => [...prev, addedProduct]);
+    } catch (err) {
+      console.error(err);
+      alert('Erro: ' + (err as Error).message);
+    }
   };
 
-  const handleUpdateQuantity = (productId: number, newQuantity: number) => {
-    if (newQuantity <= 0) return handleRemoveItem(productId);
-    setCartItems(prev => prev.map(item => item.id === productId ? { ...item, quantity: newQuantity } : item));
+  const handleUpdateProduct = async (updatedProduct: Product) => {
+    try {
+      const response = await fetch(`/api/products?id=${updatedProduct.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedProduct),
+      });
+      if (!response.ok) throw new Error('Falha ao atualizar o produto.');
+      const returnedProduct: Product = await response.json();
+      setProducts(prev => prev.map(p => p.id === returnedProduct.id ? returnedProduct : p));
+    } catch (err) {
+      console.error(err);
+      alert('Erro: ' + (err as Error).message);
+    }
+  };
+  
+  const handleDeleteProduct = async (productId: number) => {
+    try {
+      const response = await fetch(`/api/products?id=${productId}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) throw new Error('Falha ao excluir o produto.');
+      setProducts(prev => prev.filter(p => p.id !== productId));
+    } catch(err) {
+      console.error(err);
+      alert('Erro: ' + (err as Error).message);
+    }
+  };
+  
+  const handleAddReview = (productId: number, reviewData: Omit<Review, 'id' | 'date'>) => {
+    const productToUpdate = products.find(p => p.id === productId);
+    if (!productToUpdate) return;
+    
+    const newReview: Review = {
+      ...reviewData,
+      id: Date.now(), // ID temporário, o servidor pode ou não usar
+      date: new Date().toISOString(),
+    };
+    
+    const updatedReviews = productToUpdate.reviews ? [...productToUpdate.reviews, newReview] : [newReview];
+    const updatedProduct = { ...productToUpdate, reviews: updatedReviews };
+
+    handleUpdateProduct(updatedProduct);
   };
 
-  const handleRemoveItem = (productId: number) => {
-    setCartItems(prev => prev.filter(item => item.id !== productId));
-  };
-
-  if (loading) return <div className="min-h-screen flex items-center justify-center">Carregando...</div>;
-  if (error) return <div className="min-h-screen flex items-center justify-center">Erro: {error}</div>;
-
-  // 🔹 Renderização Admin / Store / Login
-  if (currentPath.startsWith('#/admin')) {
-    return isAdmin ? (
-      <AdminPage />
-    ) : <LoginPage onLogin={handleLogin} />;
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">
+        <img className="h-24 w-auto animate-pulse" src={LOGO_BASE64} alt="JS Store Logo" />
+        <p className="mt-4 text-slate-600 font-semibold">Carregando loja...</p>
+      </div>
+    );
+  }
+  
+  if (error) {
+     return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 p-4 text-center">
+        <img className="h-24 w-auto" src={LOGO_BASE64} alt="JS Store Logo" />
+        <h2 className="mt-6 text-2xl font-bold text-red-600">Ocorreu um Erro</h2>
+        <p className="mt-2 text-slate-600">{error}</p>
+        <button onClick={fetchProducts} className="mt-6 bg-pink-500 text-white py-2 px-6 rounded-lg font-semibold hover:bg-pink-600 transition-colors">
+            Tentar Novamente
+        </button>
+      </div>
+    );
   }
 
-  // 🔹 Layout principal da loja
-  return (
-    <div className="flex flex-col min-h-screen">
-      <Header
-        cartItemCount={cartItems.length}
-        onCartClick={() => setIsCartOpen(true)}
-        newProductCount={0} // você pode adaptar para notificação
-        onNotificationClick={() => {}}
-      />
-
-      <main className="flex-grow">
-        <StorePage
+  if (currentPath.startsWith('#/admin')) {
+    if (isAdmin) {
+      return (
+        <AdminPage 
           products={products}
-          onAddReview={() => {}}
-          onAddToCart={handleAddToCart}
+          onLogout={handleLogout}
+          onAddProduct={handleAddProduct}
+          onUpdateProduct={handleUpdateProduct}
+          onDeleteProduct={handleDeleteProduct}
+          onRefreshProducts={fetchProducts}
         />
-      </main>
+      );
+    } else {
+      return <LoginPage onLogin={handleLogin} />;
+    }
+  }
 
-      <Cart
-        isOpen={isCartOpen}
-        onClose={() => setIsCartOpen(false)}
-        cartItems={cartItems}
-        onUpdateQuantity={handleUpdateQuantity}
-        onRemoveItem={handleRemoveItem}
-      />
-    </div>
-  );
+  return <StorePage products={products} onAddReview={handleAddReview} />;
 };
 
 export default App;
