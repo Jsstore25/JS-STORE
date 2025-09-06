@@ -22,22 +22,27 @@ const App: React.FC = () => {
     try {
       const response = await fetch('/api/products');
       if (!response.ok) {
-        // A API agora retorna a mensagem de erro exata que precisamos.
-        const errorText = await response.text();
-        let detailMessage;
+        // A resposta do servidor é a fonte da verdade para o erro.
+        // Capturamos o texto bruto, que pode ser JSON da nossa API ou HTML de um erro do Vercel.
+        const errorFromServer = await response.text();
+        let displayError = errorFromServer;
+
+        // Tentamos extrair a mensagem específica do nosso JSON de erro.
         try {
-          const errorJson = JSON.parse(errorText);
-          detailMessage = errorJson.message || errorJson.error || `O servidor retornou o status ${response.status} sem uma mensagem de erro clara.`;
+            const parsedError = JSON.parse(errorFromServer);
+            if (parsedError.message) {
+                displayError = parsedError.message;
+            }
         } catch (e) {
-          // Se a resposta não for JSON, pode ser uma página de erro do Vercel ou outro problema.
-          detailMessage = `O servidor retornou uma resposta inesperada (Status: ${response.status}). Resposta: ${errorText.substring(0, 300)}`;
+            // Se não for JSON, não há problema. O texto bruto já é útil.
         }
-        throw new Error(detailMessage);
+        
+        throw new Error(displayError);
       }
       const data: Product[] = await response.json();
       setProducts(data);
     } catch (err: any) {
-      setError(err.message || 'Ocorreu um erro desconhecido ao carregar os produtos.');
+      setError(err.message); // Exibe a mensagem de erro exata que construímos acima.
       console.error(err);
     } finally {
       setLoading(false);
