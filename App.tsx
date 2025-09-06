@@ -78,6 +78,21 @@ const App: React.FC = () => {
     window.location.hash = '#/';
   };
   
+  const handleApiError = async (operation: string, response: Response) => {
+    let errorMessage = `Falha ao ${operation}.`;
+    try {
+        const errorBody = await response.json();
+        if (errorBody.message) {
+            errorMessage += `\n\nMensagem do Servidor:\n${errorBody.message}`;
+        } else {
+            errorMessage += `\n\nResposta do Servidor (código ${response.status}):\n${JSON.stringify(errorBody, null, 2)}`;
+        }
+    } catch (e) {
+        errorMessage += `\n\nO servidor respondeu com o código ${response.status} mas o corpo da resposta não era JSON.`;
+    }
+    return errorMessage;
+  };
+
   const handleAddProduct = async (newProduct: Omit<Product, 'id'>) => {
     try {
       const response = await fetch('/api/products', {
@@ -85,7 +100,10 @@ const App: React.FC = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newProduct),
       });
-      if (!response.ok) throw new Error('Falha ao adicionar o produto.');
+      if (!response.ok) {
+        const errorMessage = await handleApiError('adicionar o produto', response);
+        throw new Error(errorMessage);
+      }
       const addedProduct: Product = await response.json();
       setProducts(prev => [...prev, addedProduct]);
     } catch (err) {
@@ -101,7 +119,10 @@ const App: React.FC = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updatedProduct),
       });
-      if (!response.ok) throw new Error('Falha ao atualizar o produto.');
+      if (!response.ok) {
+        const errorMessage = await handleApiError('atualizar o produto', response);
+        throw new Error(errorMessage);
+      }
       const returnedProduct: Product = await response.json();
       setProducts(prev => prev.map(p => p.id === returnedProduct.id ? returnedProduct : p));
     } catch (err) {
@@ -115,7 +136,16 @@ const App: React.FC = () => {
       const response = await fetch(`/api/products?id=${productId}`, {
         method: 'DELETE',
       });
-      if (!response.ok) throw new Error('Falha ao excluir o produto.');
+      // Um status 204 (No Content) é uma resposta de sucesso para DELETE.
+      if (response.status === 204) {
+        setProducts(prev => prev.filter(p => p.id !== productId));
+        return; 
+      }
+      if (!response.ok) {
+          const errorMessage = await handleApiError('excluir o produto', response);
+          throw new Error(errorMessage);
+      }
+      // Se a resposta for OK (ex: 200), também consideramos sucesso.
       setProducts(prev => prev.filter(p => p.id !== productId));
     } catch(err) {
       console.error(err);

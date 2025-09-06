@@ -75,7 +75,7 @@ export default async function handler(req: any, res: any) {
             const { id, ...newProductData } = body;
             const insertRes = await fetch(`${supabaseUrl}/rest/v1/produtos?select=*`, {
               method: 'POST',
-              headers: baseHeaders,
+              headers: { ...baseHeaders, 'Prefer': 'representation' }, // 'representation' é recomendado para retornar o dado
               body: JSON.stringify(newProductData),
             });
 
@@ -92,7 +92,7 @@ export default async function handler(req: any, res: any) {
 
           const updateRes = await fetch(`${supabaseUrl}/rest/v1/produtos?id=eq.${id}&select=*`, {
             method: 'PATCH', // O método de atualização do Supabase REST é PATCH
-            headers: baseHeaders,
+            headers: { ...baseHeaders, 'Prefer': 'representation' },
             body: JSON.stringify(updatedProductData),
           });
 
@@ -133,7 +133,27 @@ export default async function handler(req: any, res: any) {
 
     console.error('Erro na API com Fetch para Supabase:', originalErrorMessage);
     
-    let hint = "Verifique se as chaves (URL/KEY) do Supabase estão corretas e se as políticas de RLS (Row Level Security) da sua tabela 'produtos' permitem leitura anônima.";
+    let hint;
+    const baseHint = "Verifique se as chaves (URL/KEY) do Supabase estão corretas e se as políticas de RLS (Row Level Security) da sua tabela 'produtos' estão configuradas corretamente.";
+
+    switch (req.method) {
+        case 'GET':
+            hint = `${baseHint} A política de 'SELECT' deve permitir acesso público/anônimo.`;
+            break;
+        case 'POST':
+            hint = `${baseHint} A política de 'INSERT' deve permitir acesso para a chave utilizada (role 'anon').`;
+            break;
+        case 'PUT':
+        case 'PATCH':
+            hint = `${baseHint} A política de 'UPDATE' deve permitir acesso para a chave utilizada (role 'anon').`;
+            break;
+        case 'DELETE':
+            hint = `${baseHint} A política de 'DELETE' deve permitir acesso para a chave utilizada (role 'anon').`;
+            break;
+        default:
+            hint = baseHint;
+    }
+
     try {
         const supabaseError = JSON.parse(originalErrorMessage);
         if (supabaseError.message) {
@@ -143,7 +163,7 @@ export default async function handler(req: any, res: any) {
         // Não era um erro JSON do Supabase.
     }
 
-    const detailedMessage = `Falha na comunicação com o Supabase. ${hint}\n\nErro original completo: ${originalErrorMessage}`;
+    const detailedMessage = `Falha na comunicação com o Supabase. ${hint}`;
     
     return res.status(500).json({ message: detailedMessage });
   }
