@@ -22,20 +22,17 @@ const App: React.FC = () => {
     try {
       const response = await fetch('/api/products');
       if (!response.ok) {
-        // Tentativa de obter a mensagem de erro detalhada do servidor.
+        // A API agora retorna a mensagem de erro exata que precisamos.
         const errorText = await response.text();
-        let detail = `(Status: ${response.status} ${response.statusText})`;
+        let detailMessage;
         try {
           const errorJson = JSON.parse(errorText);
-          // A nossa API retorna um campo 'message' com o erro específico.
-          detail = errorJson.message || errorJson.error || errorText;
+          detailMessage = errorJson.message || errorJson.error || `O servidor retornou o status ${response.status} sem uma mensagem de erro clara.`;
         } catch (e) {
-          // Se não for JSON, usamos o texto da resposta. Pode ser um erro de HTML do Vercel.
-          detail = errorText.substring(0, 300); // Limita para não poluir a tela.
+          // Se a resposta não for JSON, pode ser uma página de erro do Vercel ou outro problema.
+          detailMessage = `O servidor retornou uma resposta inesperada (Status: ${response.status}). Resposta: ${errorText.substring(0, 300)}`;
         }
-        
-        // Mensagem de erro super explícita para o usuário.
-        throw new Error(`A comunicação com o servidor falhou. É muito provável que as variáveis de ambiente (VITE_SUPABASE_URL, VITE_SUPABASE_KEY) não estejam configuradas no Vercel. Detalhes do erro: ${detail}`);
+        throw new Error(detailMessage);
       }
       const data: Product[] = await response.json();
       setProducts(data);

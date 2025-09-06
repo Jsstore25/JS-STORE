@@ -18,8 +18,8 @@ export interface Product {
   reviews?: Review[];
 }
 
-const supabaseUrl = process.env.VITE_SUPABASE_URL!;
-const supabaseAnonKey = process.env.VITE_SUPABASE_KEY!;
+const supabaseUrl = process.env.SUPABASE_URL!;
+const supabaseAnonKey = process.env.SUPABASE_KEY!;
 
 const baseHeaders = {
   'apikey': supabaseAnonKey,
@@ -30,7 +30,7 @@ const baseHeaders = {
 // Este manipulador usa a sintaxe do Vercel Node.js runtime (req, res).
 export default async function handler(req: any, res: any) {
   if (!supabaseUrl || !supabaseAnonKey) {
-    const errorMessage = 'As variáveis de ambiente do Supabase (VITE_SUPABASE_URL, VITE_SUPABASE_KEY) não estão configuradas corretamente no servidor Vercel.';
+    const errorMessage = 'As variáveis de ambiente (SUPABASE_URL, SUPABASE_KEY) não estão configuradas no Vercel. IMPORTANTE: Remova o prefixo "VITE_" do nome das variáveis nas configurações do seu projeto na Vercel.';
     console.error(errorMessage);
     return res.status(500).json({ error: 'Configuração do servidor incompleta.', message: errorMessage });
   }
