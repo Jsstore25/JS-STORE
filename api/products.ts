@@ -1,4 +1,3 @@
-
 // Mantemos os tipos aqui para evitar problemas de importação no ambiente serverless.
 export interface Review {
   id: number;
@@ -31,8 +30,9 @@ const baseHeaders = {
 // Este manipulador usa a sintaxe do Vercel Node.js runtime (req, res).
 export default async function handler(req: any, res: any) {
   if (!supabaseUrl || !supabaseAnonKey) {
-    console.error('As variáveis de ambiente do Supabase não estão configuradas.');
-    return res.status(500).json({ error: 'Configuração do servidor incompleta.' });
+    const errorMessage = 'As variáveis de ambiente do Supabase (VITE_SUPABASE_URL, VITE_SUPABASE_KEY) não estão configuradas corretamente no servidor Vercel.';
+    console.error(errorMessage);
+    return res.status(500).json({ error: 'Configuração do servidor incompleta.', message: errorMessage });
   }
 
   try {
