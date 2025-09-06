@@ -27,6 +27,27 @@ const baseHeaders = {
   'Content-Type': 'application/json',
 };
 
+// Helper para converter do formato do cliente (camelCase) para o do banco de dados (snake_case)
+const toSupabase = (product: any): any => {
+  if (!product) return product;
+  const { imageUrls, ...rest } = product;
+  if (imageUrls !== undefined) {
+    return { ...rest, image_urls: imageUrls };
+  }
+  return rest;
+};
+
+// Helper para converter do formato do banco de dados (snake_case) para o do cliente (camelCase)
+const fromSupabase = (product: any): any => {
+  if (!product) return product;
+  const { image_urls, ...rest } = product;
+  if (image_urls !== undefined) {
+    return { ...rest, imageUrls: image_urls };
+  }
+  return rest;
+};
+
+
 // Este manipulador usa a sintaxe do Vercel Node.js runtime (req, res).
 export default async function handler(req: any, res: any) {
   if (!supabaseUrl || !supabaseAnonKey) {
@@ -47,7 +68,8 @@ export default async function handler(req: any, res: any) {
           const fetchRes = await fetch(`${supabaseUrl}/rest/v1/produtos?select=*&order=id.asc`, { headers: baseHeaders });
           if (!fetchRes.ok) throw new Error(await fetchRes.text());
           const data = await fetchRes.json();
-          return res.status(200).json(data);
+          const clientData = Array.isArray(data) ? data.map(fromSupabase) : fromSupabase(data);
+          return res.status(200).json(clientData);
         }
 
         case 'POST': {
@@ -60,7 +82,10 @@ export default async function handler(req: any, res: any) {
             if (!deleteRes.ok) throw new Error(`Falha ao limpar produtos: ${await deleteRes.text()}`);
             
             if (body.length > 0) {
-              const productsToInsert = body.map(({ id, ...rest }) => rest);
+              const productsToInsert = body.map(p => {
+                const { id, ...rest } = p;
+                return toSupabase(rest);
+              });
               const insertRes = await fetch(`${supabaseUrl}/rest/v1/produtos`, {
                 method: 'POST',
                 headers: { ...baseHeaders, 'Prefer': 'return=minimal' },
@@ -73,15 +98,17 @@ export default async function handler(req: any, res: any) {
           } else {
             // Inserção de um único produto
             const { id, ...newProductData } = body;
+            const supabaseData = toSupabase(newProductData);
             const insertRes = await fetch(`${supabaseUrl}/rest/v1/produtos?select=*`, {
               method: 'POST',
-              headers: { ...baseHeaders, 'Prefer': 'representation' }, // 'representation' é recomendado para retornar o dado
-              body: JSON.stringify(newProductData),
+              headers: { ...baseHeaders, 'Prefer': 'representation' },
+              body: JSON.stringify(supabaseData),
             });
 
             if (!insertRes.ok) throw new Error(await insertRes.text());
             const [data] = await insertRes.json();
-            return res.status(201).json(data);
+            const clientData = fromSupabase(data);
+            return res.status(201).json(clientData);
           }
         }
 
@@ -89,17 +116,19 @@ export default async function handler(req: any, res: any) {
           if (!idParam) return res.status(400).json({ message: 'O ID do produto é obrigatório.' });
           const id = parseInt(idParam, 10);
           const { id: bodyId, ...updatedProductData } = body;
+          const supabaseData = toSupabase(updatedProductData);
 
           const updateRes = await fetch(`${supabaseUrl}/rest/v1/produtos?id=eq.${id}&select=*`, {
             method: 'PATCH', // O método de atualização do Supabase REST é PATCH
             headers: { ...baseHeaders, 'Prefer': 'representation' },
-            body: JSON.stringify(updatedProductData),
+            body: JSON.stringify(supabaseData),
           });
 
           if (!updateRes.ok) throw new Error(await updateRes.text());
           const [data] = await updateRes.json();
           if (!data) return res.status(404).json({ message: 'Produto não encontrado.' });
-          return res.status(200).json(data);
+          const clientData = fromSupabase(data);
+          return res.status(200).json(clientData);
         }
             
         case 'DELETE': {
@@ -160,7 +189,8 @@ export default async function handler(req: any, res: any) {
             hint += `\n\nDetalhe do Supabase: ${supabaseError.message}`;
         }
     } catch (e) {
-        // Não era um erro JSON do Supabase.
+        // Não era um erro JSON do Supabase. Adiciona o erro bruto.
+        hint += `\n\nDetalhe do Erro: ${originalErrorMessage}`;
     }
 
     const detailedMessage = `Falha na comunicação com o Supabase. ${hint}`;
