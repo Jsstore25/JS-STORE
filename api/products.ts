@@ -1,8 +1,6 @@
-// Em uma aplicação real, você se conectaria a um banco de dados como Vercel Postgres, Firebase, etc.
-// Para este exemplo, usamos uma simples variável em memória para simular um banco de dados.
-// NOTA: Em um ambiente serverless, esta memória é reiniciada em cada nova instância da função.
+import { supabase } from '../lib/supabaseClient';
 
-// Tipos e dados iniciais foram internalizados para evitar problemas de importação no ambiente serverless.
+// Mantemos os tipos aqui para evitar problemas de importação no ambiente serverless.
 export interface Review {
   id: number;
   author: string;
@@ -22,78 +20,48 @@ export interface Product {
   reviews?: Review[];
 }
 
-const INITIAL_PRODUCTS: Product[] = [
-  { 
-    id: 1, 
-    name: "Slip On (1ª linha)", 
-    price: "R$ 100,00", 
-    imageUrls: ["https://images.unsplash.com/photo-1605348532760-6753d2c43329?auto=format&fit=crop&w=800&q=80"], 
-    category: "Feminino", 
-    subcategory: "Calçados", 
-    description: "Tênis slip on super confortável e estiloso, com design moderno e prático para o dia a dia. Tamanhos disponíveis do 34 ao 39.",
-    reviews: [
-      {
-        id: 1,
-        author: "Ana P.",
-        rating: 5,
-        comment: "Amei o tênis! Super confortável e a cor é linda. Chegou antes do prazo.",
-        date: "2024-05-20T10:00:00Z"
-      },
-      {
-        id: 2,
-        author: "Carlos",
-        rating: 4,
-        comment: "Produto de boa qualidade, corresponde à descrição. Apenas um pouco apertado no início.",
-        date: "2024-05-18T15:30:00Z"
-      }
-    ]
-  },
-];
-
-
-// Criamos uma cópia profunda para evitar que as mutações afetem o array original.
-let products: Product[] = JSON.parse(JSON.stringify(INITIAL_PRODUCTS));
-
-
 // Este manipulador usa a sintaxe do Vercel Node.js runtime (req, res).
 export default async function handler(req: any, res: any) {
   try {
     const { url, method, query, body } = req;
-
-    // Remove a query string e divide a URL em segmentos para um roteamento robusto.
     const pathSegments = url.split('?')[0].split('/').filter(Boolean);
-    
-    // Devido à reescrita de URL em vercel.json, tanto a adição de um produto
-    // quanto a importação chegam a esta função pelo mesmo caminho.
-    // Portanto, a lógica de roteamento é baseada no método e no corpo da requisição.
 
-    // Rota: /api/products
     if (pathSegments[0] === 'api' && pathSegments[1] === 'products' && pathSegments.length === 2) {
       const idParam = query.id as string;
 
       switch (method) {
-        case 'GET':
-          return res.status(200).json(products);
+        case 'GET': {
+          const { data, error } = await supabase
+            .from('produtos')
+            .select('*')
+            .order('id', { ascending: true });
+
+          if (error) throw error;
+          return res.status(200).json(data);
+        }
 
         case 'POST': {
-          // Diferencia a importação (array) da adição de produto (objeto)
           if (Array.isArray(body)) {
-            const importedProducts = body;
-            // Validação simples
-            if (!Array.isArray(importedProducts)) {
-              return res.status(400).json({ error: 'O corpo da requisição deve ser um array de produtos.' });
-            }
-            products = importedProducts; // Substitui a lista de produtos em memória.
+            // ATENÇÃO: Esta operação é destrutiva. Ela apaga todos os produtos existentes antes de importar os novos.
+            const { error: deleteError } = await supabase.from('produtos').delete().neq('id', 0);
+            if (deleteError) throw deleteError;
+
+            // Remove o ID do cliente, pois o Supabase irá gerá-lo
+            const productsToInsert = body.map(({ id, ...rest }) => rest);
+            const { error: insertError } = await supabase.from('produtos').insert(productsToInsert);
+            if (insertError) throw insertError;
+            
             return res.status(200).json({ message: 'Produtos importados com sucesso.' });
           } else {
-            const newProductData = body;
-            const newProduct: Product = {
-              ...newProductData,
-              id: Date.now(),
-              reviews: newProductData.reviews || [],
-            };
-            products.push(newProduct);
-            return res.status(201).json(newProduct);
+            const { id, ...newProductData } = body;
+            const { data, error } = await supabase
+              .from('produtos')
+              .insert([newProductData])
+              .select()
+              .single();
+
+            if (error) throw error;
+            return res.status(201).json(data);
           }
         }
 
@@ -102,15 +70,18 @@ export default async function handler(req: any, res: any) {
             return res.status(400).json({ error: 'O ID do produto é obrigatório.' });
           }
           const id = parseInt(idParam, 10);
-          const updatedProductData = body;
-          const productIndex = products.findIndex(p => p.id === id);
+          const { id: bodyId, ...updatedProductData } = body;
 
-          if (productIndex === -1) {
-            return res.status(404).json({ error: 'Produto não encontrado.' });
-          }
-          
-          products[productIndex] = { ...products[productIndex], ...updatedProductData };
-          return res.status(200).json(products[productIndex]);
+          const { data, error } = await supabase
+            .from('produtos')
+            .update(updatedProductData)
+            .eq('id', id)
+            .select()
+            .single();
+
+          if (error) throw error;
+          if (!data) return res.status(404).json({ error: 'Produto não encontrado.' });
+          return res.status(200).json(data);
         }
             
         case 'DELETE': {
@@ -118,27 +89,26 @@ export default async function handler(req: any, res: any) {
             return res.status(400).json({ error: 'O ID do produto é obrigatório.' });
           }
           const id = parseInt(idParam, 10);
-          const initialLength = products.length;
-          products = products.filter(p => p.id !== id);
-            
-          if (products.length === initialLength) {
-            return res.status(404).json({ error: 'Produto não encontrado.' });
-          }
-            
+          
+          const { error } = await supabase
+            .from('produtos')
+            .delete()
+            .eq('id', id);
+
+          if (error) throw error;
           return res.status(204).send(null);
         }
 
         default:
           res.setHeader('Allow', ['GET', 'POST', 'PUT', 'DELETE']);
-          return res.status(405).end(`Método ${method} não permitido para a rota de produtos.`);
+          return res.status(405).end(`Método ${method} não permitido.`);
       }
     }
     
-    // Se nenhuma rota corresponder, retorna 404
     return res.status(404).json({ error: 'Rota não encontrada.' });
 
   } catch (error: any) {
-    console.error('Erro na API:', error);
+    console.error('Erro na API Supabase:', error);
     return res.status(500).json({ error: 'Erro Interno do Servidor', message: error.message });
   }
 }

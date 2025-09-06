@@ -138,7 +138,7 @@ const AdminPage: React.FC<AdminPageProps> = ({ products, onLogout, onAddProduct,
     linkElement.remove();
   };
   
-  const handleImportChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImportChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const fileReader = new FileReader();
     const file = event.target.files?.[0];
 
@@ -200,7 +200,7 @@ const AdminPage: React.FC<AdminPageProps> = ({ products, onLogout, onAddProduct,
                <h1 className="text-xl font-bold text-gray-800">Painel do Administrador</h1>
             </div>
             <div className="flex items-center">
-              <a href="#/" className="text-sm font-medium text-gray-700 bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded-md transition-colors mr-4">Ver Loja</a>
+              <a href="#/" className="text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 px-4 py-2 rounded-md transition-colors mr-4">Ver Loja</a>
               <button onClick={onLogout} className="bg-pink-500 text-white px-4 py-2 rounded-md hover:bg-pink-600">
                 Sair
               </button>

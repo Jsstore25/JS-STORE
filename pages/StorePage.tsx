@@ -23,6 +23,7 @@ const parsePrice = (priceStr: string): number => {
 
 interface StorePageProps {
   products: Product[];
+  // FIX: Corrected Omit to use a union type for keys to omit.
   onAddReview: (productId: number, reviewData: Omit<Review, 'id' | 'date'>) => void;
 }
 
@@ -278,7 +279,7 @@ const StorePage: React.FC<StorePageProps> = ({ products, onAddReview }) => {
             className={`
               fixed top-0 left-0 h-full w-4/5 max-w-sm z-40 bg-white shadow-xl
               transform transition-transform duration-300 ease-in-out
-              md:sticky md:top-24 md:w-1/4 lg:w-1/5 md:h-auto md:max-w-none md:transform-none md:z-auto
+              md:sticky md:top-20 md:w-1/4 lg:w-1/5 md:h-auto md:max-w-none md:transform-none md:z-auto
               md:bg-transparent md:shadow-none
               ${isFilterOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
             `}
