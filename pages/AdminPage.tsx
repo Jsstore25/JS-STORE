@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import type { Product } from '../types';
 import { LOGO_BASE64 } from '../constants';
 import ProductFormModal from '../components/ProductFormModal';
-import { PlusIcon, UploadIcon, DownloadIcon } from '../components/Icons';
+import { PlusIcon, UploadIcon, DownloadIcon, EyeIcon } from '../components/Icons';
 
 interface AdminPageProps {
   products: Product[];
@@ -30,12 +30,33 @@ const AdminPage: React.FC<AdminPageProps> = ({ products, onLogout, onAddProduct,
   const [importSuccess, setImportSuccess] = useState('');
   const [importError, setImportError] = useState('');
 
+  const [visitorCount, setVisitorCount] = useState<number | null>(null);
+
   useEffect(() => {
     const savedShippingCost = localStorage.getItem('standardShippingCost');
     if (savedShippingCost) {
       const formatted = parseFloat(savedShippingCost).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
       setShippingCost(formatted);
     }
+  }, []);
+
+  useEffect(() => {
+    const fetchVisitorCount = async () => {
+        try {
+            const response = await fetch('/api/visits');
+            if (response.ok) {
+                const data = await response.json();
+                setVisitorCount(data.count);
+            } else {
+                console.error('Failed to fetch visitor count: Response not OK');
+                setVisitorCount(0);
+            }
+        } catch (error) {
+            console.error('Failed to fetch visitor count:', error);
+            setVisitorCount(0); // Show 0 on error as a fallback
+        }
+    };
+    fetchVisitorCount();
   }, []);
 
   const handleOpenAddModal = () => {
@@ -207,6 +228,25 @@ const AdminPage: React.FC<AdminPageProps> = ({ products, onLogout, onAddProduct,
         </div>
       </header>
       <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        
+        <div className="bg-white shadow-md rounded-lg p-6 mb-8">
+            <div className="flex items-center">
+                <div className="flex-shrink-0 bg-pink-500 rounded-md p-3">
+                    <EyeIcon className="h-6 w-6 text-white" />
+                </div>
+                <div className="ml-5">
+                    <dl>
+                        <dt className="text-sm font-medium text-gray-500 truncate">
+                            Visitas Totais no Site
+                        </dt>
+                        <dd className="text-3xl font-bold text-gray-900">
+                            {visitorCount !== null ? visitorCount.toLocaleString('pt-BR') : '...'}
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
         <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold">Gerenciar Produtos</h2>
             <button onClick={handleOpenAddModal} className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 flex items-center gap-2">

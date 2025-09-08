@@ -41,6 +41,24 @@ const StorePage: React.FC<StorePageProps> = ({ products, onAddReview }) => {
   const mainContentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const registerVisit = async () => {
+      // Use sessionStorage to count a visit only once per session
+      if (!sessionStorage.getItem('jsstore_visited')) {
+        try {
+          // This request is sent in the background and doesn't block rendering.
+          await fetch('/api/visits', { method: 'POST' });
+          sessionStorage.setItem('jsstore_visited', 'true');
+        } catch (error) {
+          // Log the error but don't bother the user.
+          // The visitor counter is a non-critical feature.
+          console.error('Failed to register visit:', error);
+        }
+      }
+    };
+    registerVisit();
+  }, []); // Empty dependency array ensures this runs only once on mount
+
+  useEffect(() => {
     const isModalVisible = isCartOpen || !!selectedProduct || isFilterOpen;
     if (isModalVisible) {
       document.body.style.overflow = 'hidden';

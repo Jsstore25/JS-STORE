@@ -46,7 +46,7 @@ export const BellIcon: React.FC = () => (
 );
 
 export const ShoppingBagIcon: React.FC = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
     </svg>
 );
@@ -98,4 +98,11 @@ export const StarIcon: React.FC<{ filled?: boolean; className?: string }> = ({ f
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className={`${className} ${filled ? 'text-yellow-400' : 'text-gray-300'}`}>
     <path fillRule="evenodd" d="M10.868 2.884c.321-.662 1.215-.662 1.536 0l1.681 3.462a1 1 0 00.951.691h3.634c.725 0 1.026.983.475 1.442l-2.938 2.14a1 1 0 00-.364 1.118l1.681 3.462c.321.662-.525 1.25-1.102.81l-2.938-2.14a1 1 0 00-1.175 0l-2.938 2.14c-.577.44-1.423.148-1.102-.81l1.681-3.462a1 1 0 00-.364-1.118L2.053 8.479c-.551-.459-.25-1.442.475-1.442h3.634a1 1 0 00.95-.691l1.681-3.462z" clipRule="evenodd" />
   </svg>
+);
+
+export const EyeIcon: React.FC<{className?: string}> = ({className}) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className || "h-6 w-6"} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+    </svg>
 );
