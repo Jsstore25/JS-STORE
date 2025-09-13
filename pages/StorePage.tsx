@@ -8,7 +8,7 @@ import { PaymentMethods } from '../components/PaymentIcons';
 import type { Product, CartItem, Review } from '../types';
 import { SUBCATEGORIES } from '../constants';
 
-const BANNER_IMAGE_URL = "https://images.unsplash.com/photo-1445205170230-053b83016050?auto=format&fit=crop&w=1600&q=80";
+const BANNER_IMAGE_URL = "https://images.unsplash.com/photo-1523381294911-8d3cead13475?auto=format&fit=crop&w=1600&q=80";
 
 const parsePrice = (priceStr: string): number => {
   if (typeof priceStr !== 'string') return 0;
