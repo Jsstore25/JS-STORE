@@ -8,7 +8,7 @@ import { PaymentMethods } from '../components/PaymentIcons';
 import type { Product, CartItem, Review } from '../types';
 import { SUBCATEGORIES } from '../constants';
 
-const BANNER_IMAGE_URL = "https://i.ibb.co/L95S0s2/js-store-banner.jpg";
+const BANNER_IMAGE_URL = "https://images.unsplash.com/photo-1445205170230-053b83016050?auto=format&fit=crop&w=1920&q=80";
 
 const parsePrice = (priceStr: string): number => {
   if (typeof priceStr !== 'string') return 0;
@@ -268,11 +268,11 @@ const StorePage: React.FC<StorePageProps> = ({ products, onAddReview }) => {
         onAddReview={onAddReview}
       />
 
-      <div className="w-full relative bg-gray-900 flex justify-center items-center shadow-inner">
+      <div className="w-full h-[40vh] max-h-[500px] min-h-[300px] relative bg-slate-200 flex justify-center items-center shadow-inner overflow-hidden">
         <img
           src={BANNER_IMAGE_URL}
-          alt="Banner da JS Store com modelos de camisetas"
-          className="w-full h-auto max-h-[500px] object-contain"
+          alt="Banner da JS Store com roupas em um cabideiro"
+          className="w-full h-full object-cover"
         />
         <div className="absolute bottom-4 md:bottom-8">
           <button onClick={scrollToContent} className="bg-pink-500 text-white font-bold text-sm sm:text-base py-3 px-8 rounded-full hover:bg-pink-600 transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
