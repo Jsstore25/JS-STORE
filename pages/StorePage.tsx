@@ -8,7 +8,7 @@ import { PaymentMethods } from '../components/PaymentIcons';
 import type { Product, CartItem, Review } from '../types';
 import { SUBCATEGORIES } from '../constants';
 
-const BANNER_IMAGE_URL = "https://images.unsplash.com/photo-1523381294911-8d3cead13475?auto=format&fit=crop&w=1600&q=80";
+const BANNER_IMAGE_URL = "https://i.ibb.co/L95S0s2/js-store-banner.jpg";
 
 const parsePrice = (priceStr: string): number => {
   if (typeof priceStr !== 'string') return 0;
@@ -268,18 +268,14 @@ const StorePage: React.FC<StorePageProps> = ({ products, onAddReview }) => {
         onAddReview={onAddReview}
       />
 
-      <div className="w-full bg-slate-200 shadow-inner flex flex-col md:flex-row overflow-hidden">
-        <div className="w-full md:w-1/2 h-64 md:h-[500px]">
-          <img 
-            src={BANNER_IMAGE_URL}
-            alt="Banner de moda com roupas em cabides" 
-            className="w-full h-full object-cover"
-          />
-        </div>
-        <div className="w-full md:w-1/2 flex flex-col justify-center items-start text-left p-8 md:p-12 lg:p-16 bg-white text-slate-800">
-          <h1 className="text-3xl sm:text-4xl md:text-4xl lg:text-5xl font-serif font-bold tracking-tight">Elegância e Estilo</h1>
-          <p className="mt-4 text-base sm:text-lg max-w-md">Descubra as últimas tendências da moda e encontre peças que combinam com você.</p>
-          <button onClick={scrollToContent} className="mt-8 bg-pink-500 text-white font-bold text-sm sm:text-base py-3 px-8 rounded-full hover:bg-pink-600 transition-colors">
+      <div className="w-full relative bg-gray-900 flex justify-center items-center shadow-inner">
+        <img
+          src={BANNER_IMAGE_URL}
+          alt="Banner da JS Store com modelos de camisetas"
+          className="w-full h-auto max-h-[500px] object-contain"
+        />
+        <div className="absolute bottom-4 md:bottom-8">
+          <button onClick={scrollToContent} className="bg-pink-500 text-white font-bold text-sm sm:text-base py-3 px-8 rounded-full hover:bg-pink-600 transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
               Ver Coleção
           </button>
         </div>
