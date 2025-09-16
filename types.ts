@@ -11,7 +11,7 @@ export interface Product {
   name: string;
   price: string;
   imageurls: string[];
-  category: 'Feminino' | 'Masculino';
+  category: 'Feminino' | 'Masculino' | 'Infantil';
   subcategory: string;
   description?: string;
   reviews?: Review[];

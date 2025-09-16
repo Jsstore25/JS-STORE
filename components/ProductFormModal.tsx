@@ -61,7 +61,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, on
     name: '',
     price: '',
     imageurls: [] as string[],
-    category: 'Feminino' as 'Feminino' | 'Masculino',
+    category: 'Feminino' as 'Feminino' | 'Masculino' | 'Infantil',
     subcategory: '',
     description: '',
   });
@@ -100,7 +100,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, on
     const { name, value } = e.target;
     
     if (name === 'category') {
-      const newCategory = value as 'Feminino' | 'Masculino';
+      const newCategory = value as 'Feminino' | 'Masculino' | 'Infantil';
       const firstSubcategory = SUBCATEGORIES[newCategory][0] || '';
       setFormData(prev => ({ 
         ...prev, 
@@ -321,6 +321,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, on
             <select name="category" id="category" value={formData.category} onChange={handleChange} className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500">
               <option value="Feminino">Feminino</option>
               <option value="Masculino">Masculino</option>
+              <option value="Infantil">Infantil</option>
             </select>
           </div>
            <div>
